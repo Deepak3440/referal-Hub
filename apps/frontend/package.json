@@ -58,6 +58,7 @@
     "react": "catalog:",
     "react-day-picker": "^9.11.1",
     "react-dom": "catalog:",
+    "react-easy-crop": "^6.0.2",
     "react-hook-form": "^7.55.0",
     "react-icons": "^5.4.0",
     "react-resizable-panels": "^2.1.7",
@@ -70,8 +71,5 @@
     "vite": "catalog:",
     "wouter": "^3.3.5",
     "zod": "catalog:"
-  },
-  "dependencies": {
-    "react-easy-crop": "^6.0.2"
   }
 }
