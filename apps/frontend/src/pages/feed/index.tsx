@@ -14,7 +14,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { feedApi, FEED_QUERY_KEYS, FEED_PAGE_SIZE, type FeedListResponse } from "@/lib/feed-api";
 import { isAlumniMember } from "@/lib/user-utils";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Rss } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function FeedPaginationBar({
