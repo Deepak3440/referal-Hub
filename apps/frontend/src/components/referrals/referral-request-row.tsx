@@ -12,21 +12,8 @@ import {
 } from "@/lib/referral-points";
 import { type ReferralStatus } from "@/lib/referral";
 import { buildConversationId } from "@/lib/conversation";
+import { avatarBgClass } from "@/lib/avatar-colors";
 import { cn } from "@/lib/utils";
-
-function avatarColor(name: string) {
-  const colors = [
-    "bg-blue-600",
-    "bg-violet-600",
-    "bg-emerald-600",
-    "bg-orange-600",
-    "bg-rose-600",
-    "bg-cyan-600",
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return colors[Math.abs(hash) % colors.length];
-}
 
 function rewardHint(status: string, rewardPoints: number): string | null {
   const stage = rewardStageForPosterAction(status);
@@ -70,14 +57,14 @@ export function ReferralRequestRow({
       className={cn(
         "transition-colors",
         expanded ? "bg-primary/[0.03]" : "hover:bg-muted/40",
-        isPending && !expanded && "bg-amber-50/40 dark:bg-amber-950/15",
+        isPending && !expanded && "bg-warning/10",
       )}
     >
       <div className="flex items-start gap-3 p-3 sm:p-3.5">
         <div
           className={cn(
             "h-9 w-9 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0",
-            avatarColor(name),
+            avatarBgClass(name),
           )}
         >
           {initial}
@@ -241,7 +228,7 @@ export function ReferralFilterTabs({
             active === tab.key
               ? "border-primary bg-primary text-primary-foreground"
               : tab.highlight
-                ? "border-amber-300/80 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-700/50 hover:bg-amber-100/80"
+                ? "border-warning/50 bg-warning/10 text-foreground hover:bg-warning/15"
                 : "border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground",
           )}
         >

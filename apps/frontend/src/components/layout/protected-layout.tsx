@@ -66,9 +66,9 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="flex h-[100dvh] overflow-hidden bg-muted/30">
+    <div className="flex h-[100dvh] min-h-0 overflow-hidden">
       {/* Desktop sidebar */}
-      <div className="hidden lg:flex h-full">
+      <div className="hidden lg:flex h-full shrink-0">
         <AppSidebar
           user={userProfile}
           pendingReferralCount={pendingReferralCount}

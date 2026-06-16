@@ -37,13 +37,13 @@ function SidebarProfile({
 
   return (
     <div className="p-3">
-      <div className="rounded-xl border border-border/80 bg-gradient-to-b from-card to-muted/30 overflow-hidden shadow-sm">
+      <div className="rounded-xl border border-white/10 bg-white/[0.07] overflow-hidden backdrop-blur-sm">
         <Link
           href="/profile"
-          className="flex items-center gap-3 p-3.5 hover:bg-muted/40 transition-colors"
+          className="flex items-center gap-3 p-3.5 hover:bg-white/[0.06] transition-colors"
         >
           <div className="relative shrink-0">
-            <Avatar className="h-11 w-11 ring-2 ring-primary/20 ring-offset-2 ring-offset-card">
+            <Avatar className="h-11 w-11 ring-2 ring-accent/50 ring-offset-2 ring-offset-sidebar">
               <AvatarImage
                 src={withCacheBust(resolveUploadUrl(user.avatarUrl), user.id)}
               />
@@ -51,20 +51,25 @@ function SidebarProfile({
                 {user.fullName.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-card" />
+            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-success border-2 border-sidebar" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold truncate leading-tight">{user.fullName}</p>
+            <p className="text-sm font-semibold truncate leading-tight text-sidebar-foreground">
+              {user.fullName}
+            </p>
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-              <Badge variant="secondary" className="text-[10px] h-5 px-1.5 capitalize font-normal">
+              <Badge
+                variant="secondary"
+                className="text-[10px] h-5 px-1.5 capitalize font-normal bg-white/12 text-sidebar-foreground border-white/10 hover:bg-white/12"
+              >
                 {memberTypeLabel(user.memberType)}
               </Badge>
-              <span className="text-[10px] text-muted-foreground font-medium">
+              <span className="text-[10px] text-sidebar-foreground/65 font-medium">
                 {user.totalPoints} pts
               </span>
             </div>
           </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+          <ChevronRight className="h-4 w-4 text-sidebar-foreground/40 shrink-0" />
         </Link>
 
         <div className="px-3 pb-3">
@@ -72,7 +77,7 @@ function SidebarProfile({
             type="button"
             variant="outline"
             size="sm"
-            className="w-full h-9 font-semibold text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/5 transition-colors"
+            className="w-full h-9 font-medium border-white/15 bg-transparent text-sidebar-foreground/85 hover:bg-white/10 hover:text-sidebar-foreground hover:border-white/25 transition-colors"
             onClick={onSignOut}
           >
             <LogOut className="h-4 w-4 mr-2" />
@@ -112,19 +117,21 @@ export function AppSidebar({
   ];
 
   return (
-    <aside className="font-sidebar flex h-full w-[252px] shrink-0 flex-col bg-sidebar border-r border-sidebar-border">
+    <aside className="font-sidebar flex h-full min-h-[100dvh] w-[252px] shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
       <Link
         href="/feed"
         onClick={onNavigate}
-        className="flex h-[60px] items-center gap-3 px-5 border-b border-sidebar-border hover:bg-muted/40 transition-colors"
+        className="flex h-[60px] items-center gap-3 px-5 border-b border-sidebar-border hover:bg-white/[0.06] transition-colors"
         aria-label="Go to feed"
       >
         <BrandLogo className="h-10 w-10" linked={false} />
-        <p className="font-bold text-base tracking-tight text-foreground leading-none">{BRAND.name}</p>
+        <p className="font-bold text-base tracking-tight text-sidebar-foreground leading-none">
+          {BRAND.name}
+        </p>
       </Link>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-        <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+        <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/45">
           Menu
         </p>
         {navItems.map((item) => {
@@ -139,14 +146,14 @@ export function AppSidebar({
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all relative",
                 isActive
-                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20 font-bold"
-                  : "text-foreground/80 font-semibold hover:bg-muted/80 hover:text-foreground",
+                  ? "bg-primary text-primary-foreground shadow-sm shadow-black/20 font-semibold"
+                  : "text-sidebar-foreground/75 font-medium hover:bg-white/10 hover:text-sidebar-foreground",
               )}
             >
               <Icon
                 className={cn(
                   "h-[1.125rem] w-[1.125rem] shrink-0 stroke-[2.25]",
-                  isActive && "text-primary-foreground",
+                  isActive ? "text-primary-foreground" : "text-sidebar-foreground/70",
                 )}
               />
               <span className="flex-1 tracking-tight">{item.label}</span>
@@ -156,7 +163,7 @@ export function AppSidebar({
                     "min-w-[20px] h-5 rounded-full text-[10px] font-bold flex items-center justify-center px-1.5",
                     isActive
                       ? "bg-primary-foreground/20 text-primary-foreground"
-                      : "bg-primary text-primary-foreground",
+                      : "bg-warning text-warning-foreground",
                   )}
                 >
                   {item.badge}
@@ -167,7 +174,7 @@ export function AppSidebar({
         })}
       </nav>
 
-      <div className="border-t border-sidebar-border mt-auto">
+      <div className="border-t border-sidebar-border/80 mt-auto">
         <SidebarProfile user={user} onSignOut={onSignOut} />
       </div>
     </aside>

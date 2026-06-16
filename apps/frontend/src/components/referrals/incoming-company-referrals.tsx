@@ -13,14 +13,8 @@ import {
 } from "@/lib/company-referral-api";
 import { buildConversationId } from "@/lib/conversation";
 import { resolveUploadUrl } from "@/lib/upload-url";
+import { avatarBgClass } from "@/lib/avatar-colors";
 import { cn } from "@/lib/utils";
-
-function avatarColor(name: string) {
-  const colors = ["bg-blue-600", "bg-violet-600", "bg-emerald-600", "bg-orange-600", "bg-rose-600"];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return colors[Math.abs(hash) % colors.length];
-}
 
 function CompanyReferralRequestRow({
   request,
@@ -48,7 +42,7 @@ function CompanyReferralRequestRow({
         <div
           className={cn(
             "h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0 mt-0.5",
-            avatarColor(name),
+            avatarBgClass(name),
           )}
         >
           {name.charAt(0).toUpperCase()}
@@ -59,7 +53,7 @@ function CompanyReferralRequestRow({
             <span className="font-medium text-sm truncate">{name}</span>
             <span className="text-muted-foreground text-xs truncate">· {request.roleTitle}</span>
             {isPending && (
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" title="Pending" />
+              <span className="h-1.5 w-1.5 rounded-full bg-warning shrink-0" title="Pending" />
             )}
           </div>
           <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{request.note}</p>
@@ -171,7 +165,7 @@ export function CompanyReferralsPanel({ currentUserId }: { currentUserId: number
           aria-expanded={open}
         >
           {pending > 0 && (
-            <Badge className="bg-amber-500 hover:bg-amber-500 text-white border-0 text-[10px] px-2">
+            <Badge className="bg-warning hover:bg-warning text-warning-foreground border-0 text-[10px] px-2">
               {pending} pending
             </Badge>
           )}
@@ -180,7 +174,7 @@ export function CompanyReferralsPanel({ currentUserId }: { currentUserId: number
       </div>
 
       {!open && pending > 0 && (
-        <p className="text-[11px] text-amber-800/90 dark:text-amber-200/90 px-0.5">
+        <p className="text-[11px] text-warning px-0.5">
           {pending} student{pending !== 1 ? "s" : ""} waiting for your response — expand above
         </p>
       )}

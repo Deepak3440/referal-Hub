@@ -105,7 +105,7 @@ export function ReferralRequestNotice({ status }: { status: string }) {
       className={cn(
         "rounded-lg border border-border px-3 py-2.5 text-xs leading-relaxed",
         isRejected && "bg-red-50/50 dark:bg-red-950/20",
-        isHired && "bg-emerald-50/50 dark:bg-emerald-950/20",
+        isHired && "bg-success/10",
         !isRejected && !isHired && "bg-muted/25",
       )}
     >

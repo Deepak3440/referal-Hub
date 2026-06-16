@@ -11,6 +11,7 @@ import { ReferralRequestActions } from "@/components/referrals/referral-request-
 import { useSubmitReferral } from "@/hooks/use-submit-referral";
 import { useToast } from "@/hooks/use-toast";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { companyColor } from "@/lib/avatar-colors";
 import { cn } from "@/lib/utils";
 import type { ComponentProps } from "react";
 
@@ -28,20 +29,6 @@ function JobDetailButton({
       <Link href={`/jobs/${jobId}`}>{children}</Link>
     </Button>
   );
-}
-
-function companyColor(name: string) {
-  const colors = [
-    "bg-blue-600",
-    "bg-violet-600",
-    "bg-emerald-600",
-    "bg-orange-600",
-    "bg-rose-600",
-    "bg-cyan-600",
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return colors[Math.abs(hash) % colors.length];
 }
 
 export function JobListCard({ job }: JobListCardProps) {

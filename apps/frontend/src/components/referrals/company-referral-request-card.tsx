@@ -3,21 +3,8 @@ import { Building2, ExternalLink, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DashboardCard } from "@/components/layout/page-header";
 import type { CompanyReferralRequestResult } from "@/lib/company-referral-api";
+import { companyColor } from "@/lib/avatar-colors";
 import { cn } from "@/lib/utils";
-
-function companyColor(name: string) {
-  const colors = [
-    "bg-blue-600",
-    "bg-violet-600",
-    "bg-emerald-600",
-    "bg-orange-600",
-    "bg-rose-600",
-    "bg-cyan-600",
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return colors[Math.abs(hash) % colors.length];
-}
 
 export function CompanyReferralRequestCard({ request }: { request: CompanyReferralRequestResult }) {
   const referrerCount = request.referrerCount ?? request.referrerIds?.length ?? 0;
@@ -64,7 +51,7 @@ export function CompanyReferralRequestCard({ request }: { request: CompanyReferr
           className={cn(
             "self-start shrink-0 capitalize",
             request.status === "pending"
-              ? "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-0"
+              ? "bg-warning/15 text-foreground border-0"
               : "bg-muted text-muted-foreground border-0",
           )}
         >

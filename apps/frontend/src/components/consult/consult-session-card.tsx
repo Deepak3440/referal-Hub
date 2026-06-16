@@ -6,11 +6,11 @@ import type { Consultation } from "@/lib/consult-api";
 import { cn } from "@/lib/utils";
 
 const STATUS_STYLE: Record<string, string> = {
-  pending: "bg-yellow-500/10 text-yellow-700 border-yellow-500/30",
-  scheduled: "bg-green-500/10 text-green-700 border-green-500/30",
+  pending: "bg-warning/10 text-warning border-warning/30",
+  scheduled: "bg-success/10 text-success border-success/30",
   rejected: "bg-red-500/10 text-red-700 border-red-500/30",
-  completed: "bg-blue-500/10 text-blue-700 border-blue-500/30",
-  cancelled: "bg-gray-500/10 text-gray-600 border-gray-500/30",
+  completed: "bg-primary/10 text-primary border-primary/30",
+  cancelled: "bg-muted text-muted-foreground border-border",
 };
 
 type ConsultSessionCardProps = {
@@ -59,7 +59,7 @@ export function ConsultSessionCard({
       )}
 
       {session.status === "scheduled" && session.scheduledAt && (
-        <div className="rounded-lg bg-green-500/5 border border-green-500/20 p-3 space-y-2">
+        <div className="rounded-lg bg-success/5 border border-success/20 p-3 space-y-2">
           <div className="flex flex-wrap gap-4 text-sm">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-green-700" />

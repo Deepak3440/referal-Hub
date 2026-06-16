@@ -155,7 +155,7 @@ export function ReferralProgressView({
             </div>
           )}
           {pointsPaid > 0 && (
-            <div className="flex items-center gap-2 px-4 py-3 text-amber-700 font-semibold">
+            <div className="flex items-center gap-2 px-4 py-3 text-warning font-semibold">
               <Coins className="w-4 h-4" />−{pointsPaid} pts paid from your account (added to {posterName})
             </div>
           )}

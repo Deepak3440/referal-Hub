@@ -24,7 +24,7 @@ export function JobDetailsCard({ job, compact = false }: { job: Job; compact?: b
           <span className="flex items-center gap-1">
             <MapPin className="w-4 h-4" />{job.location}
           </span>
-          <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-700">
+          <Badge variant="secondary" className="bg-warning/10 text-warning">
             <Trophy className="w-3 h-3 mr-1" />{job.rewardPoints} pts reward
           </Badge>
         </div>

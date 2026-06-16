@@ -149,7 +149,7 @@ export function JobReferralsPanel({
         </span>
         <span className="flex items-center gap-1.5 text-xs flex-wrap justify-end shrink-0 max-w-[50%] sm:max-w-none">
           {pending > 0 && (
-            <Badge className="bg-amber-500 hover:bg-amber-500 text-white border-0">
+            <Badge className="bg-warning hover:bg-warning text-warning-foreground border-0">
               {pending} pending
             </Badge>
           )}

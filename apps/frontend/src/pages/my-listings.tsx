@@ -587,21 +587,21 @@ export default function MyListings() {
           </div>
 
           {((stats?.pendingReferrals ?? 0) > 0 || companyPending > 0) && (
-            <div className="rounded-xl border border-amber-200/80 bg-amber-50/60 dark:bg-amber-950/30 dark:border-amber-800/50 p-4 text-sm space-y-2">
+            <div className="rounded-xl border border-warning/35 bg-warning/10 p-4 text-sm space-y-2">
               {(stats?.pendingReferrals ?? 0) > 0 && (
-                <p className="font-medium text-amber-800 dark:text-amber-200 flex items-center gap-2">
-                  <Clock className="h-4 w-4 shrink-0" />
+                <p className="font-medium text-foreground flex items-center gap-2">
+                  <Clock className="h-4 w-4 shrink-0 text-warning" />
                   {stats?.pendingReferrals} pending job request
                   {(stats?.pendingReferrals ?? 0) !== 1 ? "s" : ""}
                 </p>
               )}
               {companyPending > 0 && (
-                <p className="font-medium text-amber-800 dark:text-amber-200 flex items-center gap-2">
-                  <Clock className="h-4 w-4 shrink-0" />
+                <p className="font-medium text-foreground flex items-center gap-2">
+                  <Clock className="h-4 w-4 shrink-0 text-warning" />
                   {companyPending} pending company request{companyPending !== 1 ? "s" : ""}
                 </p>
               )}
-              <p className="text-xs text-amber-700/90 dark:text-amber-300/80">
+              <p className="text-xs text-muted-foreground">
                 Review company requests above or expand an opening below to manage job referrals.
               </p>
             </div>

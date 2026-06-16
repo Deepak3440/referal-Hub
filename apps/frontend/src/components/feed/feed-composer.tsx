@@ -193,10 +193,10 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
               type="button"
               onClick={() => imageInputRef.current?.click()}
               disabled={uploading || isPosting}
-              className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium text-foreground/80 hover:bg-sky-500/[0.08] transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium text-foreground/80 hover:bg-primary/[0.08] transition-colors disabled:opacity-50"
             >
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-500/10 ring-1 ring-sky-500/15">
-                <ImagePlus className="h-4 w-4 text-sky-600" />
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/15">
+                <ImagePlus className="h-4 w-4 text-primary" />
               </span>
               <span className="hidden sm:inline">Photo</span>
             </button>
@@ -318,7 +318,7 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-8 text-xs text-muted-foreground hover:text-sky-600"
+                  className="h-8 text-xs text-muted-foreground hover:text-primary"
                   onClick={() => imageInputRef.current?.click()}
                   disabled={uploading || isPosting}
                 >

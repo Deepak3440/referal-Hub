@@ -18,20 +18,7 @@ import { readFileAsBase64 } from "@/lib/feed-utils";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Loader2, Upload, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-function companyColor(name: string) {
-  const colors = [
-    "bg-blue-600",
-    "bg-violet-600",
-    "bg-emerald-600",
-    "bg-orange-600",
-    "bg-rose-600",
-    "bg-cyan-600",
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return colors[Math.abs(hash) % colors.length];
-}
+import { companyColor } from "@/lib/avatar-colors";
 
 type Props = {
   company: CompanyReferrerRow | null;
@@ -142,7 +129,7 @@ export function RequestCompanyReferralDialog({ company, open, onOpenChange, onSu
           </div>
         </div>
 
-        <div className="rounded-lg border border-emerald-200/70 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-900/40 px-3 py-2.5 text-xs text-emerald-900 dark:text-emerald-100">
+        <div className="rounded-lg border border-success/25 bg-success/10 px-3 py-2.5 text-xs text-foreground">
           <p className="font-semibold uppercase tracking-wide text-[10px] mb-1">Available referrers</p>
           <p>
             {company.referrerCount} verified alumni at {company.company} will receive your request.
@@ -246,4 +233,4 @@ export function RequestCompanyReferralDialog({ company, open, onOpenChange, onSu
   );
 }
 
-export { companyColor };
+export { companyColor } from "@/lib/avatar-colors";

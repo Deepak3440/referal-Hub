@@ -29,20 +29,20 @@ export const FLOW_STEPS: { key: ReferralStatus; label: string }[] = [
 export function getStatusColor(status: string): string {
   switch (status) {
     case "pending":
-      return "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500 border-yellow-500/20";
+      return "bg-warning/10 text-warning border-warning/25";
     case "accepted":
-      return "bg-blue-500/10 text-blue-700 dark:text-blue-500 border-blue-500/20";
+      return "bg-primary/10 text-primary border-primary/25";
     case "referred":
       return "bg-indigo-500/10 text-indigo-700 dark:text-indigo-500 border-indigo-500/20";
     case "interviewing":
-      return "bg-purple-500/10 text-purple-700 dark:text-purple-500 border-purple-500/20";
+      return "bg-violet-500/10 text-violet-700 dark:text-violet-500 border-violet-500/20";
     case "hired":
-      return "bg-green-500/10 text-green-700 dark:text-green-500 border-green-500/20";
+      return "bg-success/10 text-success border-success/25";
     case "rejected":
     case "rejected_after_interview":
       return "bg-red-500/10 text-red-700 dark:text-red-500 border-red-500/20";
     default:
-      return "bg-gray-500/10 text-gray-700 border-gray-500/20";
+      return "bg-muted text-muted-foreground border-border";
   }
 }
 
@@ -50,15 +50,15 @@ export function getStatusColor(status: string): string {
 export function getStatusColorSoft(status: string): string {
   switch (status) {
     case "pending":
-      return "bg-amber-50 text-amber-800 border-amber-200/70 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-800/40";
+      return "bg-warning/10 text-foreground border-warning/30";
     case "accepted":
-      return "bg-sky-50 text-sky-800 border-sky-200/70 dark:bg-sky-950/30 dark:text-sky-200 dark:border-sky-800/40";
+      return "bg-primary/10 text-primary border-primary/25";
     case "referred":
       return "bg-indigo-50 text-indigo-800 border-indigo-200/70 dark:bg-indigo-950/30 dark:text-indigo-200 dark:border-indigo-800/40";
     case "interviewing":
       return "bg-violet-50 text-violet-800 border-violet-200/70 dark:bg-violet-950/30 dark:text-violet-200 dark:border-violet-800/40";
     case "hired":
-      return "bg-emerald-50 text-emerald-800 border-emerald-200/70 dark:bg-emerald-950/30 dark:text-emerald-200 dark:border-emerald-800/40";
+      return "bg-success/10 text-success border-success/25";
     case "rejected":
     case "rejected_after_interview":
       return "bg-red-50 text-red-800 border-red-200/70 dark:bg-red-950/30 dark:text-red-200 dark:border-red-800/40";
@@ -71,15 +71,15 @@ export function getStatusColorSoft(status: string): string {
 export function getStatusProgressColor(status: string): string {
   switch (status) {
     case "pending":
-      return "[&>div]:bg-amber-500";
+      return "[&>div]:bg-warning";
     case "accepted":
-      return "[&>div]:bg-sky-500";
+      return "[&>div]:bg-primary";
     case "referred":
       return "[&>div]:bg-indigo-500";
     case "interviewing":
       return "[&>div]:bg-violet-500";
     case "hired":
-      return "[&>div]:bg-emerald-500";
+      return "[&>div]:bg-success";
     default:
       return "[&>div]:bg-primary/70";
   }

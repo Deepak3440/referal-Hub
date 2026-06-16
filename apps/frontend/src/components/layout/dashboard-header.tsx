@@ -30,8 +30,7 @@ export function DashboardHeader({
 
   return (
     <header className="sticky top-0 z-30 shrink-0 border-b border-border bg-card shadow-sm">
-      <div className="h-1 bg-gradient-to-r from-primary via-primary/70 to-primary/30" />
-      <div className="flex h-[56px] items-center gap-4 px-4 lg:px-6">
+      <div className="flex h-[60px] items-center gap-4 px-4 lg:px-6">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="lg:hidden shrink-0 h-9 w-9">

@@ -6,8 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { companyReferralApi, type CompanyReferrerRow } from "@/lib/company-referral-api";
 import {
   RequestCompanyReferralDialog,
-  companyColor,
 } from "@/components/referrals/request-company-referral-dialog";
+import { companyColor } from "@/lib/avatar-colors";
 import { ArrowRight, Building2, Search, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 

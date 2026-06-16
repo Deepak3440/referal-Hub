@@ -14,21 +14,8 @@ import { Button } from "@/components/ui/button";
 import { formatJobExperience, formatJobSalary } from "@/lib/job-salary";
 import { formatJobWorkType } from "@/lib/job-work-type";
 import { JobReferralsPanel } from "@/components/jobs/job-referrals-panel";
+import { companyColor } from "@/lib/avatar-colors";
 import { cn } from "@/lib/utils";
-
-function companyColor(name: string) {
-  const colors = [
-    "bg-blue-600",
-    "bg-violet-600",
-    "bg-emerald-600",
-    "bg-orange-600",
-    "bg-rose-600",
-    "bg-cyan-600",
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return colors[Math.abs(hash) % colors.length];
-}
 
 export function OfferOpeningCard({ job }: { job: Job }) {
   const experience = formatJobExperience(job.experienceMin);
