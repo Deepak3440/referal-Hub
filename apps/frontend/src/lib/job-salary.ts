@@ -9,8 +9,8 @@ function isSalaryDisclosed(job: SalaryFields): boolean {
   return Boolean((job.salaryMin ?? 0) > 0 || (job.salaryMax ?? 0) > 0);
 }
 
-function formatAmount(n: number): string {
-  return `$${n.toLocaleString()}`;
+function formatLpa(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, "");
 }
 
 export function formatJobSalary(job: SalaryFields): string {
@@ -19,9 +19,9 @@ export function formatJobSalary(job: SalaryFields): string {
   const min = job.salaryMin ?? 0;
   const max = job.salaryMax ?? 0;
 
-  if (min > 0 && max > 0) return `${formatAmount(min)} – ${formatAmount(max)}`;
-  if (min > 0) return `${formatAmount(min)}+`;
-  if (max > 0) return `Up to ${formatAmount(max)}`;
+  if (min > 0 && max > 0) return `${formatLpa(min)} – ${formatLpa(max)} LPA`;
+  if (min > 0) return `${formatLpa(min)}+ LPA`;
+  if (max > 0) return `Up to ${formatLpa(max)} LPA`;
   return "Not disclosed";
 }
 

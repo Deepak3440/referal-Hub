@@ -23,6 +23,7 @@ import {
   Trash2,
   Video,
   Briefcase,
+  Building2,
   X,
 } from "lucide-react";
 import {
@@ -43,11 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { FeedLinkPreview, FeedPostImage, normalizeUrl } from "@/components/feed/feed-media";
-import {
-  ImageCropDialog,
-  openImageForCrop,
-  revokeCropSrc,
-} from "@/components/shared/image-crop-dialog";
+import { revokeCropSrc } from "@/components/shared/image-crop-dialog";
 
 type Props = {
   post: FeedPost;
@@ -71,7 +68,6 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
   const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [editUploading, setEditUploading] = useState(false);
-  const [cropSource, setCropSource] = useState<{ src: string; file: File } | null>(null);
 
   const author = post.author;
   const isJobPost = (post.postType ?? "update") === "job";
@@ -83,7 +79,6 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
   const youtubeEmbed = post.videoUrl ? getYoutubeEmbedUrl(post.videoUrl) : null;
   const isVideoFile = post.videoUrl?.includes("/api/uploads/");
   const isOwnPost = post.authorId === currentUserId;
-  const subtitle = [author?.currentRole, author?.company].filter(Boolean).join(" · ");
 
   const likeMutation = useMutation({
     mutationFn: () => feedApi.toggleLike(post.id),
@@ -267,8 +262,21 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
                     )}
                   </div>
                 </div>
-                {subtitle && (
-                  <p className="text-xs text-muted-foreground truncate mt-0.5 leading-snug">{subtitle}</p>
+                {(author?.currentRole || author?.company) && (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground mt-0.5 leading-snug">
+                    {author?.currentRole && (
+                      <span className="inline-flex items-center gap-1 min-w-0 max-w-full">
+                        <Briefcase className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{author.currentRole}</span>
+                      </span>
+                    )}
+                    {author?.company && (
+                      <span className="inline-flex items-center gap-1 min-w-0 max-w-full">
+                        <Building2 className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{author.company}</span>
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -358,8 +366,8 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
                   if (!file.type.startsWith("image/")) {
                     toast({ title: "Please choose an image file", variant: "destructive" });
                   } else {
-                    const next = openImageForCrop(file);
-                    if (next) setCropSource(next);
+                    const previewUrl = URL.createObjectURL(file);
+                    void uploadEditImage(file, previewUrl);
                   }
                 }
                 e.target.value = "";
@@ -391,6 +399,7 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
                     url={editJobLink}
                     label={editJobTitle || undefined}
                     postType={post.postType ?? "update"}
+                    company={author?.company}
                     compact
                   />
                 )}
@@ -487,6 +496,7 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
               url={post.linkUrl}
               label={post.linkLabel}
               postType={post.postType ?? "update"}
+              company={author?.company}
             />
           </div>
         )}
@@ -636,26 +646,6 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
         </div>
       </div>
 
-      <ImageCropDialog
-        open={Boolean(cropSource)}
-        onOpenChange={(open) => {
-          if (!open) {
-            revokeCropSrc(cropSource?.src);
-            setCropSource(null);
-          }
-        }}
-        imageSrc={cropSource?.src ?? ""}
-        fileName={cropSource?.file.name ?? "post.jpg"}
-        mimeType={cropSource?.file.type ?? "image/jpeg"}
-        aspect={4 / 3}
-        title="Crop photo"
-        description="Adjust the frame so your photo looks good in the feed."
-        onConfirm={async (file, previewUrl) => {
-          revokeCropSrc(cropSource?.src);
-          setCropSource(null);
-          await uploadEditImage(file, previewUrl);
-        }}
-      />
     </article>
   );
 }

@@ -8,11 +8,7 @@ import { Link } from "wouter";
 import { readFileAsBase64 } from "@/lib/feed-utils";
 import { feedApi } from "@/lib/feed-api";
 import { FeedLinkPreview, FeedPostImage, normalizeUrl } from "@/components/feed/feed-media";
-import {
-  ImageCropDialog,
-  openImageForCrop,
-  revokeCropSrc,
-} from "@/components/shared/image-crop-dialog";
+import { revokeCropSrc } from "@/components/shared/image-crop-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Briefcase, ImagePlus, Link2, Loader2, PenLine, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -45,7 +41,6 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
   const [jobLink, setJobLink] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [cropSource, setCropSource] = useState<{ src: string; file: File } | null>(null);
 
   const resetMedia = () => {
     if (imagePreview?.startsWith("blob:")) {
@@ -160,32 +155,11 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
             if (!file.type.startsWith("image/")) {
               toast({ title: "Please choose an image file", variant: "destructive" });
             } else {
-              const next = openImageForCrop(file);
-              if (next) setCropSource(next);
+              const previewUrl = URL.createObjectURL(file);
+              void uploadImageFile(file, previewUrl);
             }
           }
           e.target.value = "";
-        }}
-      />
-
-      <ImageCropDialog
-        open={Boolean(cropSource)}
-        onOpenChange={(open) => {
-          if (!open) {
-            revokeCropSrc(cropSource?.src);
-            setCropSource(null);
-          }
-        }}
-        imageSrc={cropSource?.src ?? ""}
-        fileName={cropSource?.file.name ?? "post.jpg"}
-        mimeType={cropSource?.file.type ?? "image/jpeg"}
-        aspect={4 / 3}
-        title="Crop photo"
-        description="Adjust the frame so your photo looks good in the feed."
-        onConfirm={async (file, previewUrl) => {
-          revokeCropSrc(cropSource?.src);
-          setCropSource(null);
-          await uploadImageFile(file, previewUrl);
         }}
       />
 
@@ -317,7 +291,7 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
                 className="h-10 bg-background rounded-lg text-sm"
               />
               {showLinkPreview && (
-                <FeedLinkPreview url={jobLink} label={jobTitle || undefined} postType="job" compact />
+                <FeedLinkPreview url={jobLink} label={jobTitle || undefined} postType="job" company={user.company} compact />
               )}
             </div>
           )}

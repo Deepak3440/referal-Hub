@@ -17,7 +17,6 @@ import {
   Users,
   Trophy,
   Handshake,
-  TrendingUp,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -77,7 +76,7 @@ const jobSchema = z
       const max = data.salaryMax ?? 0;
       return min > 0 || max > 0;
     },
-    { message: "Enter at least minimum or maximum salary", path: ["salaryMin"] },
+    { message: "Enter at least minimum or maximum package (LPA)", path: ["salaryMin"] },
   )
   .refine(
     (data) => {
@@ -87,7 +86,7 @@ const jobSchema = z
       if (min > 0 && max > 0) return max >= min;
       return true;
     },
-    { message: "Max salary must be >= min salary", path: ["salaryMax"] },
+    { message: "Max package must be >= min package (LPA)", path: ["salaryMax"] },
   );
 
 type JobFormValues = z.infer<typeof jobSchema>;
@@ -369,9 +368,9 @@ export default function MyListings() {
                   <FormItem className="rounded-xl border p-4 space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="space-y-0.5">
-                        <FormLabel>Disclose salary range?</FormLabel>
+                        <FormLabel>Disclose package range?</FormLabel>
                         <FormDescription className="text-xs">
-                          Shown on the opening card, or &quot;Not disclosed&quot; if hidden.
+                          Annual CTC in lakhs per annum (LPA), e.g. 7 – 9 LPA. Shown as &quot;Not disclosed&quot; if hidden.
                         </FormDescription>
                       </div>
                       <FormControl>
@@ -385,9 +384,9 @@ export default function MyListings() {
                           name="salaryMin"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Salary from ($)</FormLabel>
+                              <FormLabel>Min package (LPA)</FormLabel>
                               <FormControl>
-                                <Input type="number" min="0" placeholder="80000" {...field} />
+                                <Input type="number" min="0" step="0.5" placeholder="7" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -398,9 +397,9 @@ export default function MyListings() {
                           name="salaryMax"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Salary to ($)</FormLabel>
+                              <FormLabel>Max package (LPA)</FormLabel>
                               <FormControl>
-                                <Input type="number" min="0" placeholder="120000" {...field} />
+                                <Input type="number" min="0" step="0.5" placeholder="9" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -487,7 +486,7 @@ export default function MyListings() {
       </section>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard
           label="Openings posted"
           value={stats?.totalJobsPosted ?? 0}
@@ -505,12 +504,6 @@ export default function MyListings() {
           label="Active referrals"
           value={stats?.activeReferrals ?? 0}
           icon={Users}
-          loading={isStatsLoading}
-        />
-        <StatCard
-          label="Successful hires"
-          value={stats?.successfulHires ?? 0}
-          icon={TrendingUp}
           loading={isStatsLoading}
         />
       </div>

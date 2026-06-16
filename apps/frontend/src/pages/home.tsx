@@ -135,7 +135,7 @@ export default function Home() {
       </section>
 
       {/* Stats */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard
           label="Your points"
           value={me?.totalPoints ?? stats?.totalPointsEarned ?? 0}
@@ -147,12 +147,6 @@ export default function Home() {
               label="Referrals given"
               value={stats?.referralsGiven ?? 0}
               icon={Users}
-              loading={statsLoading}
-            />
-            <StatCard
-              label="Successful hires"
-              value={stats?.successfulHires ?? 0}
-              icon={Sparkles}
               loading={statsLoading}
             />
             <StatCard

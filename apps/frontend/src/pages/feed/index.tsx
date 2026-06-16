@@ -4,7 +4,6 @@ import { useGetMe } from "@workspace/api-client-react";
 import { FeedComposer } from "@/components/feed/feed-composer";
 import { FeedPostCard } from "@/components/feed/feed-post-card";
 import { FeedSidebar } from "@/components/feed/feed-sidebar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -14,9 +13,8 @@ import {
 } from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
 import { feedApi, FEED_QUERY_KEYS, FEED_PAGE_SIZE, type FeedListResponse } from "@/lib/feed-api";
-import { feedRangeLabel } from "@/lib/feed-utils";
 import { isAlumniMember } from "@/lib/user-utils";
-import { ChevronLeft, ChevronRight, Rss } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function FeedPaginationBar({
@@ -158,23 +156,6 @@ export default function FeedPage() {
             }}
           />
         )}
-
-        <div className="px-3 py-2 border-b flex items-center justify-between gap-2 bg-muted/20">
-          <div className="flex items-center gap-2">
-            <Rss className="h-3.5 w-3.5 text-primary shrink-0" />
-            <span className="font-semibold text-sm">Feed</span>
-            {total > 0 && (
-              <Badge variant="secondary" className="text-[10px] h-5 font-normal">
-                {total}
-              </Badge>
-            )}
-          </div>
-          {total > 0 && (
-            <span className="text-[10px] text-muted-foreground">
-              {feedRangeLabel(page, FEED_PAGE_SIZE, total)}
-            </span>
-          )}
-        </div>
 
         {isLoading ? (
           <div className="p-3 space-y-3">
