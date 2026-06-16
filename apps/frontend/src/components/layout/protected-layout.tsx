@@ -97,7 +97,7 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
             <div
               className={cn(
                 "mx-auto w-full",
-                isFeed ? "p-3 md:p-4 max-w-6xl" : "p-4 md:p-6 lg:p-8 max-w-6xl",
+                isFeed ? "p-3 sm:p-4 max-w-6xl" : "p-3 sm:p-4 md:p-6 lg:p-8 max-w-6xl",
               )}
             >
               {children}

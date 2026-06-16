@@ -11,12 +11,12 @@ export function JobDetailsCard({ job, compact = false }: { job: Job; compact?: b
   const salary = formatJobSalary(job);
 
   return (
-    <div className="bg-card border rounded-xl p-5 space-y-5 shadow-sm">
+    <div className="bg-card border rounded-xl p-4 sm:p-5 space-y-5 shadow-sm">
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Job details
         </p>
-        <h1 className={compact ? "text-xl font-bold" : "text-2xl font-bold"}>{job.title}</h1>
+        <h1 className={compact ? "text-lg sm:text-xl font-bold" : "text-xl sm:text-2xl font-bold break-words"}>{job.title}</h1>
         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <span className="flex items-center gap-1 font-medium text-foreground">
             <Building className="w-4 h-4" />{job.company}
@@ -69,12 +69,12 @@ export function JobDetailsCard({ job, compact = false }: { job: Job; compact?: b
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-lg bg-muted/40 p-3 text-sm">
-        <span>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg bg-muted/40 p-3 text-sm">
+        <span className="min-w-0 break-words">
           <span className="text-muted-foreground">Posted by </span>
           <strong>{job.poster.fullName}</strong>
         </span>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="sm" className="self-start sm:self-auto shrink-0">
           <Link href={`/profile/${job.posterId}`}>View profile</Link>
         </Button>
       </div>

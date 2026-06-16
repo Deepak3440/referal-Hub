@@ -289,7 +289,7 @@ export default function MyListings() {
                         <RadioGroup
                           value={field.value}
                           onValueChange={field.onChange}
-                          className="grid grid-cols-3 gap-2"
+                          className="grid grid-cols-1 sm:grid-cols-3 gap-2"
                         >
                           {JOB_WORK_TYPE_OPTIONS.map((option) => (
                             <FormItem key={option.value} className="space-y-0">
@@ -330,7 +330,7 @@ export default function MyListings() {
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="experienceMin"
@@ -367,7 +367,7 @@ export default function MyListings() {
                 name="salaryDisclosed"
                 render={({ field }) => (
                   <FormItem className="rounded-xl border p-4 space-y-3">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="space-y-0.5">
                         <FormLabel>Disclose salary range?</FormLabel>
                         <FormDescription className="text-xs">
@@ -379,7 +379,7 @@ export default function MyListings() {
                       </FormControl>
                     </div>
                     {salaryDisclosed && (
-                      <div className="grid grid-cols-2 gap-4 pt-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                         <FormField
                           control={form.control}
                           name="salaryMin"

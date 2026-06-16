@@ -104,15 +104,15 @@ export default function MyProfile() {
 
       <DashboardCard className="overflow-hidden">
         <div className="h-32 bg-primary/10"></div>
-        <div className="px-6 pb-6 relative">
-          <Avatar className="w-24 h-24 border-4 border-background absolute -top-12">
+        <div className="px-4 sm:px-6 pb-6 relative">
+          <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-background absolute -top-10 sm:-top-12 left-4 sm:left-6">
             <AvatarImage src={profile.avatarUrl || undefined} />
             <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
               {profile.fullName.charAt(0)}
             </AvatarFallback>
           </Avatar>
 
-          <div className="flex justify-end pt-4">
+          <div className="flex justify-end pt-12 sm:pt-4">
             <Button
               variant="outline"
               size="sm"
@@ -123,9 +123,9 @@ export default function MyProfile() {
             </Button>
           </div>
 
-          <div className="mt-2">
-            <h1 className="text-2xl font-bold">{profile.fullName}</h1>
-            <p className="text-lg text-muted-foreground">{profile.headline}</p>
+          <div className="mt-2 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold break-words">{profile.fullName}</h1>
+            <p className="text-base sm:text-lg text-muted-foreground break-words">{profile.headline}</p>
             <p className="text-sm text-muted-foreground mt-1">
               {[profile.currentRole, profile.company].filter(Boolean).join(" at ") || "Role & company not set"}
               {profile.experienceYears != null && profile.experienceYears > 0

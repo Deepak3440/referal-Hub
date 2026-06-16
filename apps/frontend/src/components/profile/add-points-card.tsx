@@ -150,7 +150,7 @@ export function AddPointsCard({ balance }: AddPointsCardProps) {
           ))}
         </div>
 
-        <p className="text-[11px] text-muted-foreground mt-4 leading-relaxed">
+        <p className="text-[11px] text-muted-foreground mt-4 leading-relaxed hidden sm:block">
           Add more tiers in <code className="text-[10px]">POINTS_PURCHASE_PACKAGES</code> — set higher{" "}
           <code className="text-[10px]">bonusPercent</code> on larger packs for extra discount points.
         </p>

@@ -70,15 +70,15 @@ export default function Referrals() {
         <div className="flex flex-col gap-4">
           {myRequests.map((ref) => (
             <Link key={ref.id} href={`/jobs/${ref.jobId}`} className="block">
-              <DashboardCard className="p-5 space-y-3.5 hover:border-primary/25 hover:shadow-md transition-all cursor-pointer">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="space-y-1.5">
+              <DashboardCard className="p-4 sm:p-5 space-y-3.5 hover:border-primary/25 hover:shadow-md transition-all cursor-pointer">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
+                  <div className="space-y-1.5 min-w-0 flex-1">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Request you sent
                     </p>
-                    <div className="flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-semibold">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <Briefcase className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                      <span className="font-semibold min-w-0 line-clamp-2 break-words">
                         {ref.job?.title} · {ref.job?.company}
                       </span>
                     </div>
@@ -89,7 +89,7 @@ export default function Referrals() {
                       {formatDistanceToNow(new Date(ref.createdAt), { addSuffix: true })}
                     </p>
                   </div>
-                  <ReferralStatusBadge status={ref.status} soft />
+                  <ReferralStatusBadge status={ref.status} soft className="self-start sm:self-center shrink-0" />
                 </div>
                 <ReferralProgressBar status={ref.status} showSteps={false} colored />
                 {!canSendReferralRequest(ref.status) && (

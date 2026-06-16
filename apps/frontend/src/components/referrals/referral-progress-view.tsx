@@ -60,20 +60,20 @@ export function ReferralProgressView({
   return (
     <div className="rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-background to-background overflow-hidden shadow-md">
       {/* Header */}
-      <div className="px-5 pt-5 pb-4 border-b border-primary/10 bg-primary/5">
+      <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-4 border-b border-primary/10 bg-primary/5">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1">
               Your referral progress
             </p>
-            <h2 className="text-xl font-bold">{jobTitle}</h2>
+            <h2 className="text-lg sm:text-xl font-bold break-words">{jobTitle}</h2>
             <p className="text-sm text-muted-foreground">{company}</p>
           </div>
-          <ReferralStatusBadge status={status} />
+          <ReferralStatusBadge status={status} className="shrink-0" />
         </div>
       </div>
 
-      <div className="p-5 space-y-5">
+      <div className="p-4 sm:p-5 space-y-5">
         {/* Big progress bar */}
         {!isRejected ? (
           <div className="space-y-2">
@@ -103,15 +103,18 @@ export function ReferralProgressView({
 
         {/* Step pills */}
         {!isRejected && (
-          <div className="grid grid-cols-5 gap-1">
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none sm:grid sm:grid-cols-5 sm:gap-1 sm:overflow-visible sm:mx-0 sm:px-0">
             {FLOW_STEPS.map((step, idx) => {
               const done = idx < currentIdx;
               const active = idx === currentIdx;
               return (
-                <div key={step.key} className="flex flex-col items-center gap-1 text-center">
+                <div
+                  key={step.key}
+                  className="flex flex-col items-center gap-1 text-center min-w-[3.5rem] sm:min-w-0 shrink-0 sm:shrink"
+                >
                   <div
                     className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2",
+                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shrink-0",
                       done && "bg-primary text-primary-foreground border-primary",
                       active && "bg-primary/15 text-primary border-primary ring-2 ring-primary/20",
                       !done && !active && "bg-muted text-muted-foreground border-muted",
@@ -119,7 +122,12 @@ export function ReferralProgressView({
                   >
                     {done ? <Check className="w-4 h-4" /> : idx + 1}
                   </div>
-                  <span className={cn("text-[10px] leading-tight", active ? "font-bold text-primary" : "text-muted-foreground")}>
+                  <span
+                    className={cn(
+                      "text-[10px] leading-tight max-w-[4rem] sm:max-w-none truncate sm:whitespace-normal",
+                      active ? "font-bold text-primary" : "text-muted-foreground",
+                    )}
+                  >
                     {step.label}
                   </span>
                 </div>

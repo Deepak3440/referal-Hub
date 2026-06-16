@@ -141,13 +141,13 @@ export function JobReferralsPanel({
         className="w-full justify-between h-auto py-2.5 rounded-xl gap-2"
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="flex items-center gap-2 font-medium text-sm min-w-0">
+        <span className="flex items-center gap-2 font-medium text-sm min-w-0 flex-1">
           <Users className="h-4 w-4 shrink-0 text-primary" />
           <span className="truncate">
             Manage referrals{total > 0 ? ` (${total})` : ""}
           </span>
         </span>
-        <span className="flex items-center gap-1.5 text-xs flex-wrap justify-end shrink-0">
+        <span className="flex items-center gap-1.5 text-xs flex-wrap justify-end shrink-0 max-w-[50%] sm:max-w-none">
           {pending > 0 && (
             <Badge className="bg-amber-500 hover:bg-amber-500 text-white border-0">
               {pending} pending

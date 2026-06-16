@@ -163,8 +163,13 @@ export function JobListCard({ job }: JobListCardProps) {
               {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
             </p>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <JobDetailButton jobId={job.id} variant="outline" size="sm" className="h-8">
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto sm:shrink-0">
+              <JobDetailButton
+                jobId={job.id}
+                variant="outline"
+                size="sm"
+                className="h-8 w-full sm:w-auto justify-center"
+              >
                 View job
                 <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
               </JobDetailButton>
@@ -173,7 +178,7 @@ export function JobListCard({ job }: JobListCardProps) {
                 isPending={isPending}
                 onSubmit={handleRequest}
                 buttonSize="sm"
-                buttonClassName="h-8"
+                buttonClassName="h-8 w-full sm:w-auto"
               />
             </div>
           </div>

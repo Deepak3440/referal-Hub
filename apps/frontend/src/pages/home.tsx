@@ -90,7 +90,7 @@ export default function Home() {
     <div className="space-y-6">
       {/* Welcome hero — LinkedIn style */}
       <section className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/8 via-card to-card overflow-hidden shadow-sm">
-        <div className="p-6 sm:p-8">
+        <div className="p-4 sm:p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="space-y-3 max-w-xl">
               <Badge className="bg-primary/15 text-primary border-0 hover:bg-primary/15 font-medium">

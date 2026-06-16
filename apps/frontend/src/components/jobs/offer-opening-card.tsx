@@ -44,7 +44,7 @@ export function OfferOpeningCard({ job }: { job: Job }) {
       )}
     >
       <div className="p-4 sm:p-5">
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           <div
             className={cn(
               "h-12 w-12 rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm",

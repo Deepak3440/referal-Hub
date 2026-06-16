@@ -18,7 +18,7 @@ export function PageHeader({
       {(title || description) && (
         <div className="space-y-1">
           {title && (
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">{title}</h1>
           )}
           {description && (
             <p
