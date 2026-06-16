@@ -112,7 +112,7 @@ export function AppSidebar({
   ];
 
   return (
-    <aside className="flex h-full w-[252px] shrink-0 flex-col bg-sidebar border-r border-sidebar-border">
+    <aside className="font-sidebar flex h-full w-[252px] shrink-0 flex-col bg-sidebar border-r border-sidebar-border">
       <Link
         href="/home"
         onClick={onNavigate}

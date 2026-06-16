@@ -43,6 +43,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { FeedLinkPreview, FeedPostImage, normalizeUrl } from "@/components/feed/feed-media";
+import {
+  ImageCropDialog,
+  openImageForCrop,
+  revokeCropSrc,
+} from "@/components/shared/image-crop-dialog";
 
 type Props = {
   post: FeedPost;
@@ -66,6 +71,7 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
   const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [editUploading, setEditUploading] = useState(false);
+  const [cropSource, setCropSource] = useState<{ src: string; file: File } | null>(null);
 
   const author = post.author;
   const isJobPost = (post.postType ?? "update") === "job";
@@ -185,19 +191,16 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
     setEditUploading(false);
   };
 
-  const handleEditImagePick = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast({ title: "Please choose an image file", variant: "destructive" });
-      return;
-    }
+  const uploadEditImage = async (file: File, previewUrl: string) => {
     setEditUploading(true);
     try {
       const base64 = await readFileAsBase64(file);
       const saved = await feedApi.uploadMedia(base64, file.type);
       clearEditImagePreview();
       setEditImageUrl(saved.url);
-      setEditImagePreview(URL.createObjectURL(file));
+      setEditImagePreview(previewUrl);
     } catch (err) {
+      revokeCropSrc(previewUrl);
       toast({
         title: err instanceof Error ? err.message : "Image upload failed",
         variant: "destructive",
@@ -220,11 +223,15 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
     commentMutation.mutate(text);
   };
 
+  const timeLabel = `${formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}${
+    wasEdited && !isEditing ? " · Edited" : ""
+  }`;
+
   return (
     <article className="bg-card hover:bg-muted/10 transition-colors">
-      <div className="p-3 sm:px-4">
+      <div className="p-3 sm:px-4 sm:py-4">
         <div className="flex items-start gap-3">
-          <Link href={author ? `/profile/${author.id}` : "/profile"}>
+          <Link href={author ? `/profile/${author.id}` : "/profile"} className="shrink-0">
             <Avatar className="h-11 w-11 ring-2 ring-background hover:ring-primary/20 transition-all">
               <AvatarImage src={author?.avatarUrl || undefined} />
               <AvatarFallback className="bg-primary/10 text-primary font-semibold">
@@ -235,38 +242,34 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <Link
-                  href={author ? `/profile/${author.id}` : "/profile"}
-                  className="font-semibold text-[15px] hover:text-primary hover:underline leading-tight block truncate"
-                >
-                  {author?.fullName ?? "Member"}
-                </Link>
-                <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                  <Badge variant="secondary" className="text-[10px] h-5 px-1.5 capitalize font-normal">
-                    {memberTypeLabel(author?.memberType)}
-                  </Badge>
-                  {author?.isConsultant && (
-                    <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-normal">
-                      Mentor
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Link
+                    href={author ? `/profile/${author.id}` : "/profile"}
+                    className="font-semibold text-[15px] hover:text-primary hover:underline leading-tight truncate min-w-0"
+                  >
+                    {author?.fullName ?? "Member"}
+                  </Link>
+                  <div className="flex items-center gap-1 shrink-0 ml-auto">
+                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5 capitalize font-normal">
+                      {memberTypeLabel(author?.memberType)}
                     </Badge>
-                  )}
-                  {(post.postType ?? "update") === "job" && (
-                    <Badge className="text-[10px] h-5 px-1.5 bg-primary/10 text-primary border-0 font-normal">
-                      <Briefcase className="h-3 w-3 mr-0.5" />
-                      Job
-                    </Badge>
-                  )}
+                    {author?.isConsultant && (
+                      <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-normal">
+                        Mentor
+                      </Badge>
+                    )}
+                    {(post.postType ?? "update") === "job" && (
+                      <Badge className="text-[10px] h-5 px-1.5 bg-primary/10 text-primary border-0 font-normal">
+                        <Briefcase className="h-3 w-3 mr-0.5" />
+                        Job
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 {subtitle && (
-                  <p className="text-xs text-muted-foreground truncate mt-1">{subtitle}</p>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5 leading-snug">{subtitle}</p>
                 )}
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-                  {wasEdited && !isEditing && (
-                    <span className="ml-1">· edited</span>
-                  )}
-                </p>
               </div>
 
               {isOwnPost && (
@@ -341,6 +344,7 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
           </div>
         </div>
 
+        <div className="mt-2 min-w-0 sm:ml-14">
         {isEditing ? (
           <div className="mt-3 space-y-3">
             <input
@@ -350,7 +354,14 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) void handleEditImagePick(file);
+                if (file) {
+                  if (!file.type.startsWith("image/")) {
+                    toast({ title: "Please choose an image file", variant: "destructive" });
+                  } else {
+                    const next = openImageForCrop(file);
+                    if (next) setCropSource(next);
+                  }
+                }
                 e.target.value = "";
               }}
             />
@@ -565,6 +576,10 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
         </div>
         )}
 
+        {!isEditing && (
+          <p className="mt-1.5 text-[11px] text-muted-foreground leading-none">{timeLabel}</p>
+        )}
+
         {!isEditing && showComments && (
           <div className="mt-3 pt-3 border-t space-y-3">
             {post.comments.map((comment) => (
@@ -618,7 +633,29 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
             </form>
           </div>
         )}
+        </div>
       </div>
+
+      <ImageCropDialog
+        open={Boolean(cropSource)}
+        onOpenChange={(open) => {
+          if (!open) {
+            revokeCropSrc(cropSource?.src);
+            setCropSource(null);
+          }
+        }}
+        imageSrc={cropSource?.src ?? ""}
+        fileName={cropSource?.file.name ?? "post.jpg"}
+        mimeType={cropSource?.file.type ?? "image/jpeg"}
+        aspect={4 / 3}
+        title="Crop photo"
+        description="Adjust the frame so your photo looks good in the feed."
+        onConfirm={async (file, previewUrl) => {
+          revokeCropSrc(cropSource?.src);
+          setCropSource(null);
+          await uploadEditImage(file, previewUrl);
+        }}
+      />
     </article>
   );
 }

@@ -8,6 +8,11 @@ import { Link } from "wouter";
 import { readFileAsBase64 } from "@/lib/feed-utils";
 import { feedApi } from "@/lib/feed-api";
 import { FeedLinkPreview, FeedPostImage, normalizeUrl } from "@/components/feed/feed-media";
+import {
+  ImageCropDialog,
+  openImageForCrop,
+  revokeCropSrc,
+} from "@/components/shared/image-crop-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Briefcase, ImagePlus, Link2, Loader2, PenLine, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -40,8 +45,12 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
   const [jobLink, setJobLink] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [cropSource, setCropSource] = useState<{ src: string; file: File } | null>(null);
 
   const resetMedia = () => {
+    if (imagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
     setImagePreview(null);
     setImageUrl(null);
   };
@@ -76,20 +85,20 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
     }
   };
 
-  const handleImagePick = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast({ title: "Please choose an image file", variant: "destructive" });
-      return;
-    }
+  const uploadImageFile = async (file: File, previewUrl: string) => {
     setMode("update");
     setUploading(true);
     try {
       const base64 = await readFileAsBase64(file);
       const saved = await feedApi.uploadMedia(base64, file.type);
+      if (imagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
       setImageUrl(saved.url);
-      setImagePreview(URL.createObjectURL(file));
+      setImagePreview(previewUrl);
       setExpanded(true);
     } catch (err) {
+      revokeCropSrc(previewUrl);
       toast({
         title: err instanceof Error ? err.message : "Image upload failed",
         variant: "destructive",
@@ -147,8 +156,36 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) void handleImagePick(file);
+          if (file) {
+            if (!file.type.startsWith("image/")) {
+              toast({ title: "Please choose an image file", variant: "destructive" });
+            } else {
+              const next = openImageForCrop(file);
+              if (next) setCropSource(next);
+            }
+          }
           e.target.value = "";
+        }}
+      />
+
+      <ImageCropDialog
+        open={Boolean(cropSource)}
+        onOpenChange={(open) => {
+          if (!open) {
+            revokeCropSrc(cropSource?.src);
+            setCropSource(null);
+          }
+        }}
+        imageSrc={cropSource?.src ?? ""}
+        fileName={cropSource?.file.name ?? "post.jpg"}
+        mimeType={cropSource?.file.type ?? "image/jpeg"}
+        aspect={4 / 3}
+        title="Crop photo"
+        description="Adjust the frame so your photo looks good in the feed."
+        onConfirm={async (file, previewUrl) => {
+          revokeCropSrc(cropSource?.src);
+          setCropSource(null);
+          await uploadImageFile(file, previewUrl);
         }}
       />
 

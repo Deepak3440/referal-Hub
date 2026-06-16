@@ -5,6 +5,11 @@ import { Camera, Loader2, X } from "lucide-react";
 import { readFileAsBase64 } from "@/lib/feed-utils";
 import { uploadProfileAvatar } from "@/lib/profile-api";
 import { resolveUploadUrl, withCacheBust } from "@/lib/upload-url";
+import {
+  ImageCropDialog,
+  openImageForCrop,
+  revokeCropSrc,
+} from "@/components/shared/image-crop-dialog";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -39,6 +44,7 @@ export function ProfilePhotoPicker({
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [cropSource, setCropSource] = useState<{ src: string; file: File } | null>(null);
   const initial = fullName.trim().charAt(0).toUpperCase() || "?";
   const serverPreview = withCacheBust(resolveUploadUrl(existingUrl), cacheKey);
   const previewUrl = value?.previewUrl ?? serverPreview;
@@ -123,8 +129,39 @@ export function ProfilePhotoPicker({
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) void handlePick(file);
+            if (file) {
+              const mimeType = file.type || "image/jpeg";
+              if (!ALLOWED_TYPES.has(mimeType)) {
+                onError?.("Use JPG, PNG, WebP, or GIF for your profile photo.");
+              } else if (file.size > MAX_BYTES) {
+                onError?.("Profile photo must be 5 MB or smaller.");
+              } else {
+                const next = openImageForCrop(file);
+                if (next) setCropSource(next);
+              }
+            }
             e.target.value = "";
+          }}
+        />
+        <ImageCropDialog
+          open={Boolean(cropSource)}
+          onOpenChange={(open) => {
+            if (!open) {
+              revokeCropSrc(cropSource?.src);
+              setCropSource(null);
+            }
+          }}
+          imageSrc={cropSource?.src ?? ""}
+          fileName={cropSource?.file.name ?? "profile.jpg"}
+          mimeType={cropSource?.file.type ?? "image/jpeg"}
+          aspect={1}
+          cropShape="round"
+          title="Crop profile photo"
+          description="Position your face in the circle, then zoom if needed."
+          onConfirm={async (file) => {
+            revokeCropSrc(cropSource?.src);
+            setCropSource(null);
+            await handlePick(file);
           }}
         />
         <Button
