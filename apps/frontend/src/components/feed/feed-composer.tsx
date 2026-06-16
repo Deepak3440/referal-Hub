@@ -87,11 +87,13 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
       toast({ title: "Add a job link (Naukri, LinkedIn, etc.)", variant: "destructive" });
       return;
     }
-    try {
-      new URL(normalizeUrl(jobLink));
-    } catch {
-      toast({ title: "Enter a valid link starting with https://", variant: "destructive" });
-      return;
+    if (jobLink.trim()) {
+      try {
+        new URL(normalizeUrl(jobLink));
+      } catch {
+        toast({ title: "Enter a valid link starting with https://", variant: "destructive" });
+        return;
+      }
     }
 
     await onPost({
