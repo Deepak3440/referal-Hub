@@ -4,7 +4,7 @@ const postSchema = new Schema(
   {
     id: { type: Number, required: true, unique: true },
     authorId: { type: Number, required: true, index: true },
-    content: { type: String, required: true, maxlength: 5000 },
+    content: { type: String, default: "", maxlength: 5000 },
     imageUrl: { type: String, default: null },
     videoUrl: { type: String, default: null },
     linkUrl: { type: String, default: null },

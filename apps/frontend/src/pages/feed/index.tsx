@@ -152,7 +152,17 @@ export default function FeedPage() {
             embedded
             isPosting={createMutation.isPending}
             onPost={async (payload) => {
-              await createMutation.mutateAsync(payload);
+              const hasText = Boolean(payload.content?.trim());
+              const hasImage = Boolean(payload.imageUrl);
+              if (payload.postType === "job") {
+                if (!hasText) throw new Error("Write something before posting");
+              } else if (!hasText && !hasImage) {
+                throw new Error("Write something or add a photo");
+              }
+              await createMutation.mutateAsync({
+                ...payload,
+                content: payload.content?.trim() ?? "",
+              });
             }}
           />
         )}

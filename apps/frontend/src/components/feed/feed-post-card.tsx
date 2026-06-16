@@ -113,8 +113,10 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
   const updateMutation = useMutation({
     mutationFn: () => {
       const content = editContent.trim();
-      if (!content) {
-        throw new Error("Write something to post");
+      if (isJobPost) {
+        if (!content) throw new Error("Write something to post");
+      } else if (!content && !editImageUrl) {
+        throw new Error("Write something or add a photo");
       }
       if (isJobPost && !editJobLink.trim()) {
         throw new Error("Job link is required for job posts");
@@ -471,7 +473,11 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
                 type="button"
                 size="sm"
                 onClick={() => updateMutation.mutate()}
-                disabled={!editContent.trim() || updateMutation.isPending || editUploading}
+                disabled={
+                  updateMutation.isPending ||
+                  editUploading ||
+                  (isJobPost ? !editContent.trim() : !editContent.trim() && !editImageUrl)
+                }
               >
                 {updateMutation.isPending ? (
                   <>
@@ -484,11 +490,11 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
               </Button>
             </div>
           </div>
-        ) : (
+        ) : post.content ? (
           <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap text-foreground/95">
             {post.content}
           </p>
-        )}
+        ) : null}
 
         {!isEditing && post.linkUrl && (
           <div className="mt-3">

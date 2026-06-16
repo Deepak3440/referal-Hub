@@ -17,9 +17,14 @@ import { notifyPostComment, notifyPostLike } from "../services/notification-trig
 
 const router: IRouter = Router();
 
+const postContentSchema = z
+  .string()
+  .transform((value) => value.trim())
+  .pipe(z.string().max(5000));
+
 const PostBodySchema = z
   .object({
-    content: z.string().min(1, "Write something to post").max(5000),
+    content: postContentSchema,
     imageUrl: z.string().min(1).optional().nullable(),
     videoUrl: z.string().min(1).optional().nullable(),
     linkUrl: z.string().min(1).optional().nullable(),
@@ -27,11 +32,29 @@ const PostBodySchema = z
     postType: z.enum(["update", "job"]).optional().default("update"),
   })
   .superRefine((data, ctx) => {
-    if (data.postType === "job" && !data.linkUrl?.trim()) {
+    const hasText = Boolean(data.content);
+    const hasMedia = Boolean(data.imageUrl?.trim()) || Boolean(data.videoUrl?.trim());
+
+    if (data.postType === "job") {
+      if (!hasText) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Write something to post",
+          path: ["content"],
+        });
+      }
+      if (!data.linkUrl?.trim()) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Job link is required for job posts",
+          path: ["linkUrl"],
+        });
+      }
+    } else if (!hasText && !hasMedia) {
       ctx.addIssue({
         code: "custom",
-        message: "Job link is required for job posts",
-        path: ["linkUrl"],
+        message: "Write something or add a photo",
+        path: ["content"],
       });
     }
     if (data.linkUrl?.trim()) {
@@ -164,7 +187,7 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
   const post = await PostModel.create({
     id,
     authorId: user.id,
-    content: content.trim(),
+    content: content ?? "",
     imageUrl: imageUrl ?? null,
     videoUrl: videoUrl ?? null,
     linkUrl: linkUrl?.trim() ?? null,
@@ -307,7 +330,7 @@ router.put("/posts/:id", requireAuth, async (req, res): Promise<void> => {
 
   const { content, imageUrl, videoUrl, linkUrl, linkLabel, postType } = parsed.data;
 
-  existing.content = content.trim();
+  existing.content = content ?? "";
   existing.imageUrl = imageUrl ?? null;
   existing.videoUrl = videoUrl ?? null;
   existing.linkUrl = linkUrl?.trim() ?? null;

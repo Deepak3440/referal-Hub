@@ -137,12 +137,9 @@ export default function MyProfile() {
           <div className="mt-2 min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold break-words">{profile.fullName}</h1>
             <p className="text-base sm:text-lg text-muted-foreground break-words">{profile.headline}</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {[profile.currentRole, profile.company].filter(Boolean).join(" at ") || "Role & company not set"}
-              {profile.experienceYears != null && profile.experienceYears > 0
-                ? ` • ${profile.experienceYears} yrs exp`
-                : ""}
-            </p>
+            {profile.company && (
+              <p className="text-sm text-muted-foreground mt-1">{profile.company}</p>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-2 mt-4">

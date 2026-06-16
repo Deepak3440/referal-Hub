@@ -105,8 +105,15 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
 
   const handleSubmit = async () => {
     const text = content.trim();
-    if (!text) {
-      toast({ title: "Write something before posting", variant: "destructive" });
+    const hasImage = Boolean(imageUrl);
+
+    if (mode === "job") {
+      if (!text) {
+        toast({ title: "Write something before posting", variant: "destructive" });
+        return;
+      }
+    } else if (!text && !hasImage) {
+      toast({ title: "Write something or add a photo", variant: "destructive" });
       return;
     }
     if (mode === "job" && !jobLink.trim()) {
@@ -136,6 +143,11 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
   const showLinkPreview = mode === "job" && jobLink.trim().length > 8;
   const firstName = user.fullName.trim().split(/\s+/)[0] || "there";
   const isJob = mode === "job";
+  const hasImage = Boolean(imageUrl);
+  const canPost =
+    !uploading &&
+    !isPosting &&
+    (isJob ? Boolean(content.trim()) && Boolean(jobLink.trim()) : Boolean(content.trim()) || hasImage);
 
   return (
     <div
@@ -265,7 +277,9 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
             placeholder={
               isJob
                 ? "Describe the role, company, and experience needed..."
-                : `What do you want to talk about, ${firstName}?`
+                : hasImage
+                  ? `Add text if you want, ${firstName}... (optional)`
+                  : `What do you want to talk about, ${firstName}?`
             }
             className="min-h-[100px] resize-none bg-background border-muted-foreground/15 text-sm rounded-xl"
             value={content}
@@ -344,7 +358,7 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
                 size="sm"
                 className="h-8 rounded-full px-5 text-xs font-semibold"
                 onClick={() => void handleSubmit()}
-                disabled={uploading || isPosting || !content.trim()}
+                disabled={!canPost}
               >
                 {(uploading || isPosting) && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
                 {isJob ? "Share job" : "Post"}
