@@ -114,10 +114,10 @@ export function AppSidebar({
   return (
     <aside className="font-sidebar flex h-full w-[252px] shrink-0 flex-col bg-sidebar border-r border-sidebar-border">
       <Link
-        href="/home"
+        href="/feed"
         onClick={onNavigate}
         className="flex h-[60px] items-center gap-3 px-5 border-b border-sidebar-border hover:bg-muted/40 transition-colors"
-        aria-label="Go to dashboard"
+        aria-label="Go to feed"
       >
         <BrandLogo className="h-10 w-10" linked={false} />
         <p className="font-bold text-base tracking-tight text-foreground leading-none">{BRAND.name}</p>

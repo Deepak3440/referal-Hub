@@ -13,7 +13,7 @@ type Props = {
 export function BrandLogo({
   className,
   imageClassName,
-  href = "/home",
+  href = "/feed",
   onClick,
   linked = true,
 }: Props) {
@@ -42,7 +42,7 @@ export function BrandLogo({
         href={href}
         onClick={onClick}
         className="inline-flex shrink-0 hover:opacity-90 transition-opacity"
-        aria-label={`Go to ${BRAND.name} dashboard`}
+        aria-label={`Go to ${BRAND.name} feed`}
       >
         {shell}
       </Link>
