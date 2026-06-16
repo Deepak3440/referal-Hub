@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { MentorshipFormSections } from "@/components/profile/mentorship-form-sections";
+import { SkillsInput } from "@/components/profile/skills-input";
 import {
   ProfilePhotoPicker,
   type ProfilePhotoValue,
@@ -445,8 +446,14 @@ export function ProfileForm({
           <>
             <FormField control={form.control} name="skills" render={({ field }) => (
               <FormItem>
-                <FormLabel>Skills (comma separated)</FormLabel>
-                <FormControl><Input placeholder="React, TypeScript" {...field} /></FormControl>
+                <FormLabel>Skills</FormLabel>
+                <FormControl>
+                  <SkillsInput
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    placeholder="e.g. React, Java, System Design"
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )} />

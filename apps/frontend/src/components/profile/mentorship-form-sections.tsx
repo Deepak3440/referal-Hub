@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ProfileFormValues } from "@/components/profile/profile-form";
+import { SkillsInput } from "@/components/profile/skills-input";
 import { MENTORSHIP_DURATION_OPTIONS } from "@/lib/mentor-utils";
 import {
   EMPTY_CERT,
@@ -198,14 +199,18 @@ export function MentorshipFormSections({ control }: { control: Control<ProfileFo
 
       {/* 3. Skills */}
       <div className="space-y-3">
-        <SectionHeader step={3} title="Skills" hint="Comma-separated list of your expertise." />
+        <SectionHeader step={3} title="Skills" hint="Type to see suggestions — pick or add your own." />
         <FormField
           control={control}
           name="skills"
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input placeholder="System Design, Java, Leadership, Interview Prep" className="bg-background" {...field} />
+                <SkillsInput
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  placeholder="System Design, Java, Leadership, Interview Prep"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
