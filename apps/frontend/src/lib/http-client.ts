@@ -44,6 +44,23 @@ function toHttpError(err: unknown): HttpError {
   return new HttpError("Request failed");
 }
 
+export async function httpRequestPublic<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const headers = new Headers(options.headers);
+  if (!headers.has("content-type") && options.body) {
+    headers.set("content-type", "application/json");
+  }
+  headers.delete("authorization");
+
+  const res = await fetch(`/api${path}`, { ...options, headers });
+  const data = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
+  if (!res.ok) {
+    throw new HttpError(data?.error ?? data?.message ?? "Request failed", res.status, {
+      data: data ?? undefined,
+    });
+  }
+  return data as T;
+}
+
 export async function httpRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   try {
     return await customFetch<T>(`/api${path}`, options);

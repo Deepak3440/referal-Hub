@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { setAuthTokenGetter } from "@workspace/api-client-react";
-import { httpRequest } from "@/lib/http-client";
+import { httpRequest, httpRequestPublic } from "@/lib/http-client";
 
 const TOKEN_KEY = "referral_hub_token";
 
@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const verifyEmail = useCallback(async (token: string) => {
-    const data = await httpRequest<{ verified: boolean; email: string }>("/auth/verify-email", {
+    const data = await httpRequestPublic<{ verified: boolean; email: string }>("/auth/verify-email", {
       method: "POST",
       body: JSON.stringify({ token }),
     });

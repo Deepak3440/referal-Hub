@@ -19,6 +19,10 @@ import {
   buildSignInRedirect,
   verifyEmailToken,
 } from "../services/verify-email";
+import {
+  renderVerifyEmailError,
+  renderVerifyEmailSuccess,
+} from "../lib/verify-email-html";
 
 const router: IRouter = Router();
 
@@ -225,13 +229,30 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 });
 
 router.get("/auth/verify-email", async (req, res): Promise<void> => {
+  const signInUrl = buildSignInRedirect({});
+  const wantsHtml =
+    typeof req.query.token === "string" ||
+    (req.headers.accept?.includes("text/html") ?? false);
+
   try {
     const token = typeof req.query.token === "string" ? req.query.token : "";
     const result = await verifyEmailToken(token);
 
     if (!result.ok) {
+      if (wantsHtml) {
+        res
+          .status(400)
+          .type("html")
+          .send(renderVerifyEmailError(result.reason, signInUrl));
+        return;
+      }
       const errorCode = result.reason === "expired" ? "expired" : "invalid";
       res.redirect(buildSignInRedirect({ verifyError: errorCode }));
+      return;
+    }
+
+    if (wantsHtml) {
+      res.type("html").send(renderVerifyEmailSuccess(result.email, signInUrl));
       return;
     }
 
@@ -243,6 +264,10 @@ router.get("/auth/verify-email", async (req, res): Promise<void> => {
     );
   } catch (err) {
     console.error("Verify email (GET) error:", err);
+    if (wantsHtml) {
+      res.status(500).type("html").send(renderVerifyEmailError("server", signInUrl));
+      return;
+    }
     res.redirect(buildSignInRedirect({ verifyError: "server" }));
   }
 });
