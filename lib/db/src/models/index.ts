@@ -6,3 +6,4 @@ export * from "./consultation";
 export * from "./post";
 export * from "./post-comment";
 export * from "./notification";
+export * from "./company-referral-request";

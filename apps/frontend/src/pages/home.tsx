@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useListJobs, getListJobsQueryKey, useGetDashboardStats, useGetMe } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, Link } from "wouter";
 import { JobListCard } from "@/components/jobs/job-list-card";
+import { CompanyReferrerList } from "@/components/referrals/company-referrer-list";
+import { companyReferralApi } from "@/lib/company-referral-api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +12,7 @@ import {
   Search,
   MapPin,
   Briefcase,
+  Building2,
   Sparkles,
   Trophy,
   Users,
@@ -20,6 +24,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { memberTypeLabel, isAlumniMember } from "@/lib/user-utils";
 import { BRAND } from "@/lib/brand";
+import { cn } from "@/lib/utils";
+
+type ReferralBrowseTab = "companies" | "jobs";
 
 function StatCard({
   label,
@@ -56,6 +63,7 @@ export default function Home() {
   const [searchTitle, setSearchTitle] = useState(q);
   const [searchLocation, setSearchLocation] = useState("");
   const [searchCompany, setSearchCompany] = useState("");
+  const [referralTab, setReferralTab] = useState<ReferralBrowseTab>("companies");
 
   const { data: me } = useGetMe();
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
@@ -82,6 +90,11 @@ export default function Home() {
       },
     },
   );
+
+  const { data: companyReferrers } = useQuery({
+    queryKey: ["companies", "referrers", ""],
+    queryFn: () => companyReferralApi.listCompanies(),
+  });
 
   const firstName = me?.fullName?.split(" ")[0] ?? "there";
   const isAlumni = isAlumniMember(me);
@@ -174,83 +187,130 @@ export default function Home() {
         )}
       </section>
 
-      {/* Naukri-style search */}
+      {/* Request referral — Companies or Jobs */}
       <section className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b bg-muted/30">
-          <h3 className="font-semibold text-sm sm:text-base">Search jobs</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Filter by role, location, or company
-          </p>
-        </div>
-        <div className="p-4 sm:p-5">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Job title, skills..."
-                className="pl-9 h-11 bg-background border-muted-foreground/15 rounded-lg"
-                value={searchTitle}
-                onChange={(e) => setSearchTitle(e.target.value)}
-              />
-            </div>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Location"
-                className="pl-9 h-11 bg-background border-muted-foreground/15 rounded-lg"
-                value={searchLocation}
-                onChange={(e) => setSearchLocation(e.target.value)}
-              />
-            </div>
-            <div className="relative">
-              <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Company"
-                className="pl-9 h-11 bg-background border-muted-foreground/15 rounded-lg"
-                value={searchCompany}
-                onChange={(e) => setSearchCompany(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Job results — Naukri list style */}
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="px-5 py-4 border-b bg-muted/30 space-y-3">
           <div>
-            <h3 className="font-semibold text-base">
-              {isLoading ? "Loading jobs..." : `${jobs?.length ?? 0} jobs found`}
-            </h3>
+            <h3 className="font-semibold text-sm sm:text-base">Request a referral</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Referral-backed openings from the community
+              {referralTab === "companies"
+                ? `${companyReferrers?.total ?? 0} companies in your network have verified alumni referrers.`
+                : "Browse specific job openings and request a referral from the poster."}
             </p>
+          </div>
+
+          <div className="inline-flex rounded-full border border-border bg-muted/50 p-1">
+            <button
+              type="button"
+              onClick={() => setReferralTab("companies")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium transition-all",
+                referralTab === "companies"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Building2 className="h-3.5 w-3.5" />
+              Companies
+              {(companyReferrers?.total ?? 0) > 0 && (
+                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-normal">
+                  {companyReferrers?.total}
+                </Badge>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setReferralTab("jobs")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium transition-all",
+                referralTab === "jobs"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Briefcase className="h-3.5 w-3.5" />
+              Jobs
+              {!isLoading && (jobs?.length ?? 0) > 0 && (
+                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-normal">
+                  {jobs?.length}
+                </Badge>
+              )}
+            </button>
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-[160px] rounded-xl" />
-            ))}
-          </div>
-        ) : jobs && jobs.length > 0 ? (
-          <div className="space-y-3">
-            {jobs.map((job) => (
-              <JobListCard key={job.id} job={job} />
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-dashed border-border bg-card text-center py-16 px-6">
-            <div className="h-14 w-14 rounded-2xl bg-primary/10 mx-auto flex items-center justify-center mb-4">
-              <Briefcase className="h-7 w-7 text-primary/60" />
+        <div className="p-4 sm:p-5">
+          {referralTab === "companies" ? (
+            <CompanyReferrerList />
+          ) : (
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Job title, skills..."
+                    className="pl-9 h-11 bg-background border-muted-foreground/15 rounded-lg"
+                    value={searchTitle}
+                    onChange={(e) => setSearchTitle(e.target.value)}
+                  />
+                </div>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Location"
+                    className="pl-9 h-11 bg-background border-muted-foreground/15 rounded-lg"
+                    value={searchLocation}
+                    onChange={(e) => setSearchLocation(e.target.value)}
+                  />
+                </div>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Company"
+                    className="pl-9 h-11 bg-background border-muted-foreground/15 rounded-lg"
+                    value={searchCompany}
+                    onChange={(e) => setSearchCompany(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold text-sm">
+                    {isLoading ? "Loading jobs..." : `${jobs?.length ?? 0} jobs found`}
+                  </h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Referral-backed openings from the community
+                  </p>
+                </div>
+
+                {isLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-[160px] rounded-xl" />
+                    ))}
+                  </div>
+                ) : jobs && jobs.length > 0 ? (
+                  <div className="space-y-3">
+                    {jobs.map((job) => (
+                      <JobListCard key={job.id} job={job} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-border bg-muted/10 text-center py-12 px-6">
+                    <div className="h-12 w-12 rounded-2xl bg-primary/10 mx-auto flex items-center justify-center mb-3">
+                      <Briefcase className="h-6 w-6 text-primary/60" />
+                    </div>
+                    <h4 className="font-semibold">No jobs match your search</h4>
+                    <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+                      Try different keywords or check back later for new openings.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-            <h3 className="font-semibold text-lg">No jobs match your search</h3>
-            <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-              Try different keywords or check back later for new openings.
-            </p>
-          </div>
-        )}
+          )}
+        </div>
       </section>
     </div>
   );

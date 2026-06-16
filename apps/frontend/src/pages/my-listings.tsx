@@ -46,6 +46,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { isAlumniMember } from "@/lib/user-utils";
+import { useQuery } from "@tanstack/react-query";
+import { CompanyReferralsPanel } from "@/components/referrals/incoming-company-referrals";
+import { companyReferralApi, COMPANY_REFERRAL_QUERY_KEYS } from "@/lib/company-referral-api";
 import { cn } from "@/lib/utils";
 import {
   JOB_WORK_TYPE_OPTIONS,
@@ -151,6 +154,13 @@ export default function MyListings() {
 
   const { data: stats, isLoading: isStatsLoading } = useGetDashboardStats();
   const { data: myJobs, isLoading: isMyJobsLoading } = useListMyJobs();
+  const { data: companyIncoming } = useQuery({
+    queryKey: COMPANY_REFERRAL_QUERY_KEYS.incoming,
+    queryFn: () => companyReferralApi.listIncoming(),
+    enabled: Boolean(me),
+  });
+  const companyPending =
+    companyIncoming?.items.filter((r) => r.status === "pending").length ?? 0;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const createJob = useCreateJob();
   const { toast } = useToast();
@@ -511,19 +521,26 @@ export default function MyListings() {
       {/* Main content + sidebar */}
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_272px] gap-5">
         <div className="space-y-4 min-w-0">
-          <div className="flex items-center justify-between gap-3 px-0.5">
-            <h3 className="text-sm font-semibold text-foreground">
+          {me && <CompanyReferralsPanel currentUserId={me.id} />}
+
+          <div className="space-y-1 px-0.5">
+            <div className="flex items-center justify-between gap-3">
+            <h3 className="text-base font-bold tracking-tight text-foreground">
               Your openings
               {!isMyJobsLoading && (
-                <span className="text-muted-foreground font-normal ml-1.5">({openingCount})</span>
+                <span className="text-muted-foreground font-semibold ml-1.5">({openingCount})</span>
               )}
             </h3>
             {openingCount > 0 && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
                 <Trophy className="h-3.5 w-3.5 text-primary" />
                 <span>{stats?.totalPointsEarned ?? 0} pts earned</span>
               </div>
             )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Job postings — manage incoming requests per opening
+            </p>
           </div>
 
           {isMyJobsLoading ? (
@@ -569,14 +586,23 @@ export default function MyListings() {
             </ol>
           </div>
 
-          {(stats?.pendingReferrals ?? 0) > 0 && (
-            <div className="rounded-xl border border-amber-200/80 bg-amber-50/60 dark:bg-amber-950/30 dark:border-amber-800/50 p-4 text-sm">
-              <p className="font-medium text-amber-800 dark:text-amber-200 flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                {stats?.pendingReferrals} pending request{(stats?.pendingReferrals ?? 0) !== 1 ? "s" : ""}
-              </p>
-              <p className="text-xs text-amber-700/90 dark:text-amber-300/80 mt-1.5">
-                Expand an opening below to review and respond to requests.
+          {((stats?.pendingReferrals ?? 0) > 0 || companyPending > 0) && (
+            <div className="rounded-xl border border-amber-200/80 bg-amber-50/60 dark:bg-amber-950/30 dark:border-amber-800/50 p-4 text-sm space-y-2">
+              {(stats?.pendingReferrals ?? 0) > 0 && (
+                <p className="font-medium text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                  <Clock className="h-4 w-4 shrink-0" />
+                  {stats?.pendingReferrals} pending job request
+                  {(stats?.pendingReferrals ?? 0) !== 1 ? "s" : ""}
+                </p>
+              )}
+              {companyPending > 0 && (
+                <p className="font-medium text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                  <Clock className="h-4 w-4 shrink-0" />
+                  {companyPending} pending company request{companyPending !== 1 ? "s" : ""}
+                </p>
+              )}
+              <p className="text-xs text-amber-700/90 dark:text-amber-300/80">
+                Review company requests above or expand an opening below to manage job referrals.
               </p>
             </div>
           )}

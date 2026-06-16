@@ -11,6 +11,7 @@ import postsRouter from "./posts";
 import notificationsRouter from "./notifications";
 import referralStatsRouter from "./referral-stats";
 import configRouter from "./config";
+import companyReferralsRouter from "./company-referrals";
 
 const router: IRouter = Router();
 
@@ -20,6 +21,7 @@ router.use(authRouter);
 router.use(referralStatsRouter);
 router.use(usersRouter);
 router.use(jobsRouter);
+router.use(companyReferralsRouter);
 router.use(referralsRouter);
 router.use(messagesRouter);
 router.use(statsRouter);

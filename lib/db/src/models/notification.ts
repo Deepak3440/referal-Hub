@@ -11,6 +11,7 @@ export const NOTIFICATION_TYPES = [
   "mentorship_rejected",
   "post_comment",
   "post_like",
+  "company_referral_requested",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -22,6 +23,7 @@ export const NOTIFICATION_REFERENCE_TYPES = [
   "post",
   "post_comment",
   "conversation",
+  "company_referral",
 ] as const;
 
 export type NotificationReferenceType = (typeof NOTIFICATION_REFERENCE_TYPES)[number];
