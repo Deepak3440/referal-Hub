@@ -32,6 +32,7 @@ function formatPts(n: number) {
 export function AddPointsCard({ balance }: AddPointsCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [expanded, setExpanded] = useState(false);
   const [selected, setSelected] = useState<PointsPackage | null>(null);
   const [payOpen, setPayOpen] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
@@ -39,15 +40,17 @@ export function AddPointsCard({ balance }: AddPointsCardProps) {
   const { data, isLoading } = useQuery({
     queryKey: POINTS_PURCHASE_QUERY_KEY,
     queryFn: () => pointsPurchaseApi.getPackages(),
+    enabled: expanded,
     staleTime: 10 * 60 * 1000,
   });
 
-  if (isLoading || !data?.enabled || data.packages.length === 0) return null;
+  const packages = data?.packages ?? [];
+  const enabled = data?.enabled ?? false;
 
   const cols =
-    data.packages.length >= 4
+    packages.length >= 4
       ? "sm:grid-cols-2 lg:grid-cols-4"
-      : data.packages.length === 3
+      : packages.length === 3
         ? "sm:grid-cols-3"
         : "sm:grid-cols-2";
 
@@ -98,62 +101,116 @@ export function AddPointsCard({ balance }: AddPointsCardProps) {
           </div>
         </div>
 
-        <div className={cn("grid gap-3", cols)}>
-          {data.packages.map((pkg) => (
-            <button
-              key={pkg.id}
+        {!expanded ? (
+          <div className="mt-2">
+            <Button
               type="button"
+              className="rounded-full"
               onClick={() => {
-                setSelected(pkg);
-                setPayOpen(true);
+                setPayOpen(false);
+                setSelected(null);
+                setExpanded(true);
               }}
-              className={cn(
-                "relative rounded-xl border p-4 text-left transition-all hover:border-primary/50 hover:shadow-sm",
-                pkg.popular && "border-primary/40 bg-primary/[0.03]",
-              )}
             >
-              {pkg.popular && (
-                <span className="absolute -top-2 right-3 inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
-                  <Sparkles className="h-3 w-3" />
-                  Popular
-                </span>
-              )}
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {pkg.label}
-              </p>
-              <p className="text-2xl font-bold mt-1 tabular-nums">
-                {formatPts(pkg.totalPoints)} pts
-              </p>
-              {pkg.bonusPoints > 0 && (
-                <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1 flex items-center gap-1">
-                  <Gift className="h-3 w-3" />
-                  {formatPts(pkg.points)} + {pkg.bonusPoints} bonus
-                </p>
-              )}
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {(pkg.bonusPercent ?? 0) > 0 && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                    +{pkg.bonusPercent}% bonus
-                  </Badge>
-                )}
-                {pkg.valueBonusPercent > 0 && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-300/60 text-emerald-700 dark:text-emerald-400">
-                    {pkg.valueBonusPercent}% better value
-                  </Badge>
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1.5">
-                <CreditCard className="h-3.5 w-3.5" />
-                Pay ₹{pkg.priceInr}
-              </p>
-            </button>
-          ))}
-        </div>
+              <Sparkles className="h-4 w-4 mr-2" />
+              Add points
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+              Select a package to add points.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <p className="text-sm font-medium text-foreground">Choose a package</p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+                onClick={() => {
+                  setPayOpen(false);
+                  setSelected(null);
+                  setExpanded(false);
+                }}
+              >
+                Close
+              </Button>
+            </div>
 
-        <p className="text-[11px] text-muted-foreground mt-4 leading-relaxed hidden sm:block">
-          Add more tiers in <code className="text-[10px]">POINTS_PURCHASE_PACKAGES</code> — set higher{" "}
-          <code className="text-[10px]">bonusPercent</code> on larger packs for extra discount points.
-        </p>
+            {isLoading ? (
+              <div className={cn("grid gap-3", cols)}>
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="h-[120px] rounded-xl border bg-muted/30" />
+                ))}
+              </div>
+            ) : !enabled || packages.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Point packages are not available right now.
+              </p>
+            ) : (
+              <div className={cn("grid gap-3", cols)}>
+                {packages.map((pkg) => (
+                  <button
+                    key={pkg.id}
+                    type="button"
+                    onClick={() => {
+                      setSelected(pkg);
+                      setPayOpen(true);
+                    }}
+                    className={cn(
+                      "relative rounded-xl border p-4 text-left transition-all hover:border-primary/50 hover:shadow-sm",
+                      pkg.popular && "border-primary/40 bg-primary/[0.03]",
+                    )}
+                  >
+                    {pkg.popular && (
+                      <span className="absolute -top-2 right-3 inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                        <Sparkles className="h-3 w-3" />
+                        Popular
+                      </span>
+                    )}
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {pkg.label}
+                    </p>
+                    <p className="text-2xl font-bold mt-1 tabular-nums">
+                      {formatPts(pkg.totalPoints)} pts
+                    </p>
+                    {pkg.bonusPoints > 0 && (
+                      <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                        <Gift className="h-3 w-3" />
+                        {formatPts(pkg.points)} + {pkg.bonusPoints} bonus
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {(pkg.bonusPercent ?? 0) > 0 && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                          +{pkg.bonusPercent}% bonus
+                        </Badge>
+                      )}
+                      {pkg.valueBonusPercent > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] px-1.5 py-0 border-emerald-300/60 text-emerald-700 dark:text-emerald-400"
+                        >
+                          {pkg.valueBonusPercent}% better value
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1.5">
+                      <CreditCard className="h-3.5 w-3.5" />
+                      Pay ₹{pkg.priceInr}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <p className="text-[11px] text-muted-foreground mt-4 leading-relaxed hidden sm:block">
+              Add more tiers in <code className="text-[10px]">POINTS_PURCHASE_PACKAGES</code> — set higher{" "}
+              <code className="text-[10px]">bonusPercent</code> on larger packs for extra discount points.
+            </p>
+          </>
+        )}
       </DashboardCard>
 
       <Dialog open={payOpen} onOpenChange={setPayOpen}>
