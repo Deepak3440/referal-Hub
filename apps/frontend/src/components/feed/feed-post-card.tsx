@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
   Heart,
+  Crop,
   ImagePlus,
   Loader2,
   MessageCircle,
@@ -44,7 +45,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { FeedLinkPreview, FeedPostImage, normalizeUrl } from "@/components/feed/feed-media";
-import { revokeCropSrc } from "@/components/shared/image-crop-dialog";
+import { revokeCropSrc, openImageForCrop } from "@/components/shared/image-crop-dialog";
+import { FeedImageCropDialog } from "@/components/shared/feed-image-crop-dialog";
 
 type Props = {
   post: FeedPost;
@@ -68,6 +70,8 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
   const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [editUploading, setEditUploading] = useState(false);
+  const [editAdjustSource, setEditAdjustSource] = useState<{ src: string; file: File } | null>(null);
+  const [editLocalImageFile, setEditLocalImageFile] = useState<File | null>(null);
 
   const author = post.author;
   const isJobPost = (post.postType ?? "update") === "job";
@@ -156,6 +160,7 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
       setEditImageUrl(null);
       setEditImagePreview(null);
       setEditUploading(false);
+      setEditLocalImageFile(null);
       toast({ title: "Post updated" });
     },
     onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
@@ -186,6 +191,7 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
     setEditImageUrl(null);
     setEditImagePreview(null);
     setEditUploading(false);
+    setEditLocalImageFile(null);
   };
 
   const uploadEditImage = async (file: File, previewUrl: string) => {
@@ -196,6 +202,7 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
       clearEditImagePreview();
       setEditImageUrl(saved.url);
       setEditImagePreview(previewUrl);
+      setEditLocalImageFile(file);
     } catch (err) {
       revokeCropSrc(previewUrl);
       toast({
@@ -207,10 +214,16 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
     }
   };
 
+  const openEditImageAdjust = (file: File) => {
+    const next = openImageForCrop(file);
+    if (next) setEditAdjustSource(next);
+  };
+
   const removeEditImage = () => {
     clearEditImagePreview();
     setEditImageUrl(null);
     setEditImagePreview(null);
+    setEditLocalImageFile(null);
   };
 
   const handleCommentSubmit = (e: React.FormEvent) => {
@@ -226,6 +239,23 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
 
   return (
     <article className="bg-card hover:bg-muted/10 transition-colors">
+      <FeedImageCropDialog
+        open={Boolean(editAdjustSource)}
+        onOpenChange={(open) => {
+          if (!open) {
+            revokeCropSrc(editAdjustSource?.src);
+            setEditAdjustSource(null);
+          }
+        }}
+        imageSrc={editAdjustSource?.src ?? ""}
+        fileName={editAdjustSource?.file.name ?? "feed.jpg"}
+        mimeType={editAdjustSource?.file.type ?? "image/jpeg"}
+        onConfirm={async (file, previewUrl) => {
+          revokeCropSrc(editAdjustSource?.src);
+          setEditAdjustSource(null);
+          await uploadEditImage(file, previewUrl);
+        }}
+      />
       <div className="p-3 sm:px-4 sm:py-4">
         <div className="flex items-start gap-3">
           <Link href={author ? `/profile/${author.id}` : "/profile"} className="shrink-0">
@@ -368,8 +398,7 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
                   if (!file.type.startsWith("image/")) {
                     toast({ title: "Please choose an image file", variant: "destructive" });
                   } else {
-                    const previewUrl = URL.createObjectURL(file);
-                    void uploadEditImage(file, previewUrl);
+                    openEditImageAdjust(file);
                   }
                 }
                 e.target.value = "";
@@ -413,6 +442,20 @@ export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }
                   <div className="relative">
                     <FeedPostImage src={editImagePreview} alt="Post image" />
                     <div className="absolute top-2 right-2 flex gap-1">
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="secondary"
+                        className="h-8 w-8 shadow-md"
+                        title="Crop photo"
+                        disabled={editUploading || updateMutation.isPending || !editLocalImageFile}
+                        onClick={() => {
+                          if (editLocalImageFile) openEditImageAdjust(editLocalImageFile);
+                        }}
+                        aria-label="Crop photo"
+                      >
+                        <Crop className="h-3.5 w-3.5" />
+                      </Button>
                       <Button
                         type="button"
                         size="sm"

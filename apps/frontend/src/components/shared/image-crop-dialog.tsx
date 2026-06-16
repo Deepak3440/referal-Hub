@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cropOutputMimeType, getCroppedImageFile } from "@/lib/crop-image";
-import { Loader2 } from "lucide-react";
+import { Loader2, RotateCw } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -23,6 +23,7 @@ type Props = {
   cropShape?: "rect" | "round";
   title?: string;
   description?: string;
+  showGrid?: boolean;
   onConfirm: (file: File, previewUrl: string) => void | Promise<void>;
 };
 
@@ -32,14 +33,16 @@ export function ImageCropDialog({
   imageSrc,
   fileName = "image.jpg",
   mimeType = "image/jpeg",
-  aspect = 1,
+  aspect,
   cropShape = "rect",
   title = "Crop image",
   description = "Drag to reposition and use the slider to zoom.",
+  showGrid = false,
   onConfirm,
 }: Props) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
   const [croppedArea, setCroppedArea] = useState<Area | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -47,6 +50,7 @@ export function ImageCropDialog({
     if (open) {
       setCrop({ x: 0, y: 0 });
       setZoom(1);
+      setRotation(0);
       setCroppedArea(null);
     }
   }, [open, imageSrc]);
@@ -66,6 +70,7 @@ export function ImageCropDialog({
         croppedArea,
         fileName.replace(/\.[^.]+$/, "") + `.${ext}`,
         outputMime,
+        rotation,
       );
       const previewUrl = URL.createObjectURL(croppedFile);
       await onConfirm(croppedFile, previewUrl);
@@ -88,9 +93,10 @@ export function ImageCropDialog({
             image={imageSrc}
             crop={crop}
             zoom={zoom}
-            aspect={aspect}
+            rotation={rotation}
+            {...(aspect != null ? { aspect } : {})}
             cropShape={cropShape}
-            showGrid={false}
+            showGrid={showGrid}
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}
@@ -98,16 +104,29 @@ export function ImageCropDialog({
         </div>
 
         <div className="px-5 py-4 space-y-3 border-t bg-card">
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground w-10 shrink-0">Zoom</span>
-            <Slider
-              value={[zoom]}
-              min={1}
-              max={3}
-              step={0.05}
-              onValueChange={(value) => setZoom(value[0] ?? 1)}
-              className="flex-1"
-            />
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3 flex-1 min-w-[180px]">
+              <span className="text-xs text-muted-foreground w-10 shrink-0">Zoom</span>
+              <Slider
+                value={[zoom]}
+                min={1}
+                max={3}
+                step={0.05}
+                onValueChange={(value) => setZoom(value[0] ?? 1)}
+                className="flex-1"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-2 shrink-0"
+              onClick={() => setRotation((r) => (r + 90) % 360)}
+              disabled={busy}
+            >
+              <RotateCw className="h-4 w-4" />
+              Rotate
+            </Button>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>

@@ -8,9 +8,10 @@ import { Link } from "wouter";
 import { readFileAsBase64 } from "@/lib/feed-utils";
 import { feedApi } from "@/lib/feed-api";
 import { FeedLinkPreview, FeedPostImage, normalizeUrl } from "@/components/feed/feed-media";
-import { revokeCropSrc } from "@/components/shared/image-crop-dialog";
+import { openImageForCrop, revokeCropSrc } from "@/components/shared/image-crop-dialog";
+import { FeedImageCropDialog } from "@/components/shared/feed-image-crop-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Briefcase, ImagePlus, Link2, Loader2, PenLine, X } from "lucide-react";
+import { Briefcase, Crop, ImagePlus, Link2, Loader2, PenLine, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type PostMode = "update" | "job";
@@ -41,6 +42,8 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
   const [jobLink, setJobLink] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [adjustSource, setAdjustSource] = useState<{ src: string; file: File } | null>(null);
+  const [localImageFile, setLocalImageFile] = useState<File | null>(null);
 
   const resetMedia = () => {
     if (imagePreview?.startsWith("blob:")) {
@@ -48,6 +51,7 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
     }
     setImagePreview(null);
     setImageUrl(null);
+    setLocalImageFile(null);
   };
 
   const collapse = () => {
@@ -91,6 +95,7 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
       }
       setImageUrl(saved.url);
       setImagePreview(previewUrl);
+      setLocalImageFile(file);
       setExpanded(true);
     } catch (err) {
       revokeCropSrc(previewUrl);
@@ -101,6 +106,11 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
     } finally {
       setUploading(false);
     }
+  };
+
+  const openImageAdjust = (file: File) => {
+    const next = openImageForCrop(file);
+    if (next) setAdjustSource(next);
   };
 
   const handleSubmit = async () => {
@@ -167,11 +177,28 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
             if (!file.type.startsWith("image/")) {
               toast({ title: "Please choose an image file", variant: "destructive" });
             } else {
-              const previewUrl = URL.createObjectURL(file);
-              void uploadImageFile(file, previewUrl);
+              openImageAdjust(file);
             }
           }
           e.target.value = "";
+        }}
+      />
+
+      <FeedImageCropDialog
+        open={Boolean(adjustSource)}
+        onOpenChange={(open) => {
+          if (!open) {
+            revokeCropSrc(adjustSource?.src);
+            setAdjustSource(null);
+          }
+        }}
+        imageSrc={adjustSource?.src ?? ""}
+        fileName={adjustSource?.file.name ?? "feed.jpg"}
+        mimeType={adjustSource?.file.type ?? "image/jpeg"}
+        onConfirm={async (file, previewUrl) => {
+          revokeCropSrc(adjustSource?.src);
+          setAdjustSource(null);
+          await uploadImageFile(file, previewUrl);
         }}
       />
 
@@ -313,15 +340,30 @@ export function FeedComposer({ user, onPost, isPosting, embedded }: Props) {
           {imagePreview && imageUrl && (
             <div className="relative">
               <FeedPostImage src={imagePreview} alt="Upload preview" />
-              <Button
-                type="button"
-                size="icon"
-                variant="secondary"
-                className="absolute top-2 right-2 h-7 w-7 rounded-full shadow-md"
-                onClick={resetMedia}
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
+              <div className="absolute top-2 right-2 flex gap-1">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="h-7 w-7 rounded-full shadow-md"
+                  title="Crop photo"
+                  disabled={uploading || isPosting || !localImageFile}
+                  onClick={() => {
+                    if (localImageFile) openImageAdjust(localImageFile);
+                  }}
+                >
+                  <Crop className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="h-7 w-7 rounded-full shadow-md"
+                  onClick={resetMedia}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
           )}
 

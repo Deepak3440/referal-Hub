@@ -157,7 +157,7 @@ export function ProfilePhotoPicker({
           aspect={1}
           cropShape="round"
           title="Crop profile photo"
-          description="Position your face in the circle, then zoom if needed."
+          description="Drag to reposition, rotate if sideways, then zoom."
           onConfirm={async (file) => {
             revokeCropSrc(cropSource?.src);
             setCropSource(null);

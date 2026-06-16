@@ -232,4 +232,33 @@
       transparent 100%
     );
   }
+
+  /* Feed crop — draggable handles on all corners & edges */
+  .feed-image-crop .ReactCrop__crop-selection {
+    border-color: hsl(var(--primary));
+    border-width: 2px;
+  }
+
+  .feed-image-crop .ReactCrop__drag-handle {
+    background-color: hsl(var(--primary));
+    border: 2px solid hsl(var(--background));
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+  }
+
+  .feed-image-crop .ReactCrop__drag-handle.ord-n,
+  .feed-image-crop .ReactCrop__drag-handle.ord-s,
+  .feed-image-crop .ReactCrop__drag-handle.ord-e,
+  .feed-image-crop .ReactCrop__drag-handle.ord-w {
+    width: 28px;
+    height: 10px;
+    border-radius: 999px;
+  }
+
+  .feed-image-crop .ReactCrop__drag-handle.ord-e,
+  .feed-image-crop .ReactCrop__drag-handle.ord-w {
+    width: 10px;
+    height: 28px;
+  }
 }
