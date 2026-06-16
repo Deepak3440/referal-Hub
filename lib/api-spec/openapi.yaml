@@ -1,0 +1,1004 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Referaa - Refer, mentor, and connect platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: users
+    description: User profile operations
+  - name: jobs
+    description: Job listing operations
+  - name: referrals
+    description: Referral request operations
+  - name: messages
+    description: Messaging operations
+  - name: stats
+    description: Stats and summaries
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # Users
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+    put:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileInput"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user profile by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: Not found
+
+  # Jobs
+  /jobs:
+    get:
+      operationId: listJobs
+      tags: [jobs]
+      summary: List all public job listings
+      parameters:
+        - name: company
+          in: query
+          schema:
+            type: string
+        - name: title
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: remote
+          in: query
+          schema:
+            type: string
+        - name: experienceMin
+          in: query
+          schema:
+            type: integer
+        - name: salaryMin
+          in: query
+          schema:
+            type: integer
+        - name: scope
+          in: query
+          description: community excludes your own jobs; all shows every active job
+          schema:
+            type: string
+            enum: [community, all]
+            default: community
+      responses:
+        "200":
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+    post:
+      operationId: createJob
+      tags: [jobs]
+      summary: Post a new job listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobInput"
+      responses:
+        "201":
+          description: Created job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+
+  /jobs/my:
+    get:
+      operationId: listMyJobs
+      tags: [jobs]
+      summary: Get jobs posted by the current user
+      responses:
+        "200":
+          description: My job listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+
+  /jobs/saved:
+    get:
+      operationId: listSavedJobs
+      tags: [jobs]
+      summary: Get jobs saved by current user
+      responses:
+        "200":
+          description: Saved jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+
+  /jobs/{jobId}:
+    get:
+      operationId: getJob
+      tags: [jobs]
+      summary: Get a job by ID
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Job detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateJob
+      tags: [jobs]
+      summary: Update a job listing
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobUpdate"
+      responses:
+        "200":
+          description: Updated job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+    delete:
+      operationId: deleteJob
+      tags: [jobs]
+      summary: Delete a job listing
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /jobs/{jobId}/referrals:
+    get:
+      operationId: listJobReferrals
+      tags: [jobs]
+      summary: List referral requests for a job (poster only)
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Referrals for this job
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReferralSummary"
+        "404":
+          description: Job not found
+
+  /jobs/{jobId}/save:
+    post:
+      operationId: saveJob
+      tags: [jobs]
+      summary: Save a job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedStatus"
+    delete:
+      operationId: unsaveJob
+      tags: [jobs]
+      summary: Unsave a job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unsaved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedStatus"
+
+  # Referrals
+  /referrals:
+    get:
+      operationId: listReferrals
+      tags: [referrals]
+      summary: List referrals for current user (as requester or referrer)
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [requester, referrer]
+      responses:
+        "200":
+          description: List of referrals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Referral"
+    post:
+      operationId: createReferral
+      tags: [referrals]
+      summary: Request a referral for a job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReferralInput"
+      responses:
+        "201":
+          description: Referral request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Referral"
+
+  /referrals/{referralId}:
+    get:
+      operationId: getReferral
+      tags: [referrals]
+      summary: Get a referral by ID
+      parameters:
+        - name: referralId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Referral detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Referral"
+    patch:
+      operationId: updateReferral
+      tags: [referrals]
+      summary: Update referral status (accept/reject/update interview status)
+      parameters:
+        - name: referralId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReferralUpdate"
+      responses:
+        "200":
+          description: Updated referral
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Referral"
+
+  # Messages
+  /messages/{conversationId}:
+    get:
+      operationId: getMessages
+      tags: [messages]
+      summary: Get messages in a conversation
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a message in a conversation
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  /messages:
+    get:
+      operationId: listConversations
+      tags: [messages]
+      summary: List all conversations for current user
+      responses:
+        "200":
+          description: Conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Conversation"
+
+  # Stats
+  /stats/dashboard:
+    get:
+      operationId: getDashboardStats
+      tags: [stats]
+      summary: Get dashboard summary stats for current user
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        clerkId:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        mobile:
+          type: ["string", "null"]
+        headline:
+          type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        company:
+          type: ["string", "null"]
+        currentRole:
+          type: ["string", "null"]
+        experienceYears:
+          type: ["integer", "null"]
+        skills:
+          type: array
+          items:
+            type: string
+        linkedinUrl:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        resumeScore:
+          type: ["integer", "null"]
+        successRate:
+          type: ["integer", "null"]
+        totalPoints:
+          type: integer
+        isWorkingProfessional:
+          type: boolean
+        isConsultant:
+          type: boolean
+        memberType:
+          type: string
+          enum: [student, alumni]
+        workExperiences:
+          type: array
+          items:
+            type: object
+            properties:
+              company:
+                type: string
+              role:
+                type: ["string", "null"]
+              fromYear:
+                type: ["string", "null"]
+              toYear:
+                type: ["string", "null"]
+              description:
+                type: ["string", "null"]
+            required:
+              - company
+        projects:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: ["string", "null"]
+              technologies:
+                type: ["string", "null"]
+            required:
+              - name
+        education:
+          type: array
+          items:
+            type: object
+            properties:
+              level:
+                type: string
+                enum: [UG, PG, PhD]
+              institution:
+                type: string
+              stream:
+                type: ["string", "null"]
+              batchYear:
+                type: ["integer", "null"]
+            required:
+              - level
+              - institution
+        researchPapers:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              publication:
+                type: ["string", "null"]
+              year:
+                type: ["integer", "null"]
+              link:
+                type: ["string", "null"]
+            required:
+              - title
+        certifications:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              issuer:
+                type: ["string", "null"]
+              year:
+                type: ["integer", "null"]
+            required:
+              - name
+        isProfileComplete:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - clerkId
+        - fullName
+        - email
+        - skills
+        - totalPoints
+        - isWorkingProfessional
+        - isConsultant
+        - memberType
+        - workExperiences
+        - projects
+        - education
+        - researchPapers
+        - certifications
+        - isProfileComplete
+        - createdAt
+
+    UserProfileInput:
+      type: object
+      properties:
+        fullName:
+          type: string
+        mobile:
+          type: string
+        headline:
+          type: string
+        bio:
+          type: string
+        company:
+          type: string
+        currentRole:
+          type: string
+        experienceYears:
+          type: integer
+        skills:
+          type: array
+          items:
+            type: string
+        linkedinUrl:
+          type: string
+        avatarUrl:
+          type: string
+        isWorkingProfessional:
+          type: boolean
+        isConsultant:
+          type: boolean
+
+    Job:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        company:
+          type: string
+        companyLogoUrl:
+          type: ["string", "null"]
+        location:
+          type: string
+        isRemote:
+          type: boolean
+        isHybrid:
+          type: boolean
+        description:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        experienceMin:
+          type: ["integer", "null"]
+        experienceMax:
+          type: ["integer", "null"]
+        salaryMin:
+          type: ["integer", "null"]
+        salaryMax:
+          type: ["integer", "null"]
+        salaryDisclosed:
+          type: boolean
+        rewardPoints:
+          type: integer
+        status:
+          type: string
+          enum: [active, closed, paused]
+        posterId:
+          type: integer
+        poster:
+          $ref: "#/components/schemas/UserProfile"
+        isSaved:
+          type: boolean
+        referralCount:
+          type: integer
+        isOwnJob:
+          type: boolean
+        myReferralStatus:
+          type: ["string", "null"]
+          enum: [pending, accepted, rejected, referred, interviewing, hired, rejected_after_interview, null]
+        myReferral:
+          type: ["object", "null"]
+          properties:
+            id:
+              type: integer
+            status:
+              type: string
+            note:
+              type: ["string", "null"]
+            totalPointsCredited:
+              type: integer
+            totalPointsDeducted:
+              type: integer
+            createdAt:
+              type: string
+            updatedAt:
+              type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - company
+        - location
+        - isRemote
+        - isHybrid
+        - description
+        - skills
+        - salaryDisclosed
+        - rewardPoints
+        - status
+        - posterId
+        - poster
+        - isSaved
+        - referralCount
+        - isOwnJob
+        - createdAt
+
+    JobInput:
+      type: object
+      properties:
+        title:
+          type: string
+        company:
+          type: string
+        companyLogoUrl:
+          type: string
+        location:
+          type: string
+        isRemote:
+          type: boolean
+        isHybrid:
+          type: boolean
+        description:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        experienceMin:
+          type: integer
+        experienceMax:
+          type: integer
+        salaryMin:
+          type: integer
+        salaryMax:
+          type: integer
+        salaryDisclosed:
+          type: boolean
+        rewardPoints:
+          type: integer
+      required:
+        - title
+        - company
+        - location
+        - description
+        - skills
+        - salaryDisclosed
+        - rewardPoints
+
+    JobUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        company:
+          type: string
+        location:
+          type: string
+        isRemote:
+          type: boolean
+        isHybrid:
+          type: boolean
+        description:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        experienceMin:
+          type: integer
+        salaryMin:
+          type: integer
+        salaryMax:
+          type: integer
+        salaryDisclosed:
+          type: boolean
+        rewardPoints:
+          type: integer
+        status:
+          type: string
+          enum: [active, closed, paused]
+
+    SavedStatus:
+      type: object
+      properties:
+        saved:
+          type: boolean
+      required:
+        - saved
+
+    Referral:
+      type: object
+      properties:
+        id:
+          type: integer
+        jobId:
+          type: integer
+        job:
+          $ref: "#/components/schemas/Job"
+        requesterId:
+          type: integer
+        requester:
+          $ref: "#/components/schemas/UserProfile"
+        referrerId:
+          type: integer
+        referrer:
+          $ref: "#/components/schemas/UserProfile"
+        status:
+          type: string
+          enum: [pending, accepted, rejected, referred, interviewing, hired, rejected_after_interview]
+        interviewStatus:
+          type: ["string", "null"]
+        note:
+          type: ["string", "null"]
+        rewardTransferred:
+          type: boolean
+        rewardStagesApplied:
+          type: array
+          items:
+            type: string
+        totalPointsDeducted:
+          type: integer
+        totalPointsCredited:
+          type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - jobId
+        - job
+        - requesterId
+        - requester
+        - referrerId
+        - referrer
+        - status
+        - rewardTransferred
+        - rewardStagesApplied
+        - totalPointsDeducted
+        - totalPointsCredited
+        - createdAt
+        - updatedAt
+
+    ReferralSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        jobId:
+          type: integer
+        requesterId:
+          type: integer
+        requester:
+          $ref: "#/components/schemas/UserProfile"
+        referrerId:
+          type: integer
+        status:
+          type: string
+          enum: [pending, accepted, rejected, referred, interviewing, hired, rejected_after_interview]
+        note:
+          type: ["string", "null"]
+        rewardStagesApplied:
+          type: array
+          items:
+            type: string
+        totalPointsDeducted:
+          type: integer
+        totalPointsCredited:
+          type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - jobId
+        - requesterId
+        - requester
+        - referrerId
+        - status
+        - rewardStagesApplied
+        - totalPointsDeducted
+        - totalPointsCredited
+        - createdAt
+        - updatedAt
+
+    ReferralInput:
+      type: object
+      properties:
+        jobId:
+          type: integer
+        note:
+          type: string
+      required:
+        - jobId
+
+    ReferralUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [accepted, rejected, referred, interviewing, hired, rejected_after_interview]
+        interviewStatus:
+          type: string
+        note:
+          type: string
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: string
+        senderId:
+          type: integer
+        sender:
+          $ref: "#/components/schemas/UserProfile"
+        content:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - conversationId
+        - senderId
+        - sender
+        - content
+        - createdAt
+
+    MessageInput:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+        otherUser:
+          $ref: "#/components/schemas/UserProfile"
+        lastMessage:
+          type: ["string", "null"]
+        lastMessageAt:
+          type: ["string", "null"]
+        unreadCount:
+          type: integer
+        referralId:
+          type: ["integer", "null"]
+      required:
+        - id
+        - otherUser
+        - unreadCount
+
+    DashboardStats:
+      type: object
+      properties:
+        totalJobsPosted:
+          type: integer
+        activeReferrals:
+          type: integer
+        referralsGiven:
+          type: integer
+        referralsReceived:
+          type: integer
+        totalPointsEarned:
+          type: integer
+        successfulHires:
+          type: integer
+        pendingReferrals:
+          type: integer
+      required:
+        - totalJobsPosted
+        - activeReferrals
+        - referralsGiven
+        - referralsReceived
+        - totalPointsEarned
+        - successfulHires
+        - pendingReferrals
