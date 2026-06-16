@@ -64,7 +64,11 @@ export default function SignUpPage() {
 
     setLoading(true);
     try {
-      await signUp(payload);
+      const result = await signUp(payload);
+      if ("requiresVerification" in result) {
+        setLocation(`/verify-email-pending?email=${encodeURIComponent(result.email)}`);
+        return;
+      }
       setLocation("/home");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign up failed");

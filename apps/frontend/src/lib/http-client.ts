@@ -7,11 +7,19 @@ import { ApiError, customFetch } from "@workspace/api-client-react";
  */
 export class HttpError extends Error {
   readonly status?: number;
+  readonly code?: string;
+  readonly data?: Record<string, unknown>;
 
-  constructor(message: string, status?: number) {
+  constructor(
+    message: string,
+    status?: number,
+    extras?: { code?: string; data?: Record<string, unknown> },
+  ) {
     super(message);
     this.name = "HttpError";
     this.status = status;
+    this.code = extras?.code;
+    this.data = extras?.data;
   }
 }
 
@@ -24,7 +32,13 @@ function toMessage(err: ApiError): string {
 
 function toHttpError(err: unknown): HttpError {
   if (err instanceof ApiError) {
-    return new HttpError(toMessage(err), err.status);
+    const data = err.data as
+      | { error?: string; message?: string; code?: string; email?: string }
+      | null;
+    return new HttpError(toMessage(err), err.status, {
+      code: typeof data?.code === "string" ? data.code : undefined,
+      data: data ?? undefined,
+    });
   }
   if (err instanceof Error) return new HttpError(err.message);
   return new HttpError("Request failed");

@@ -26,12 +26,18 @@ export type SignUpPayload = {
   avatarMimeType?: string;
 };
 
+export type SignUpResult =
+  | { requiresVerification: true; email: string }
+  | { signedIn: true };
+
 type AuthContextValue = {
   isLoaded: boolean;
   isSignedIn: boolean;
-  signUp: (payload: SignUpPayload) => Promise<void>;
+  signUp: (payload: SignUpPayload) => Promise<SignUpResult>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => void;
+  resendVerificationEmail: (email: string) => Promise<void>;
+  verifyEmail: (token: string) => Promise<{ email: string }>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -78,13 +84,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void validateSession();
   }, [validateSession]);
 
-  const signUp = useCallback(async (payload: SignUpPayload) => {
-    const data = await httpRequest<{ token: string }>("/auth/signup", {
+  const signUp = useCallback(async (payload: SignUpPayload): Promise<SignUpResult> => {
+    const data = await httpRequest<{
+      token?: string;
+      requiresVerification?: boolean;
+      email?: string;
+    }>("/auth/signup", {
       method: "POST",
       body: JSON.stringify(payload),
     });
+
+    if (data.requiresVerification) {
+      return {
+        requiresVerification: true,
+        email: data.email ?? payload.email.trim().toLowerCase(),
+      };
+    }
+
+    if (!data.token) {
+      throw new Error("Unexpected signup response");
+    }
+
     setStoredToken(data.token);
     setIsSignedIn(true);
+    return { signedIn: true };
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
@@ -101,6 +124,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsSignedIn(false);
   }, []);
 
+  const resendVerificationEmail = useCallback(async (email: string) => {
+    await httpRequest("/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  }, []);
+
+  const verifyEmail = useCallback(async (token: string) => {
+    const data = await httpRequest<{ verified: boolean; email: string }>("/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    });
+    return { email: data.email };
+  }, []);
+
   const value = useMemo(
     () => ({
       isLoaded,
@@ -108,8 +146,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signIn,
       signOut,
+      resendVerificationEmail,
+      verifyEmail,
     }),
-    [isLoaded, isSignedIn, signUp, signIn, signOut],
+    [isLoaded, isSignedIn, signUp, signIn, signOut, resendVerificationEmail, verifyEmail],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

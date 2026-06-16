@@ -78,6 +78,9 @@ const userSchema = new Schema(
     researchPapers: { type: [researchPaperSchema], default: [] },
     certifications: { type: [certificationSchema], default: [] },
     isProfileComplete: { type: Boolean, required: true, default: false },
+    emailVerified: { type: Boolean, default: false },
+    emailVerificationTokenHash: { type: String, default: null, select: false },
+    emailVerificationExpiresAt: { type: Date, default: null, select: false },
   },
   {
     timestamps: { createdAt: true, updatedAt: true },
@@ -121,6 +124,7 @@ export function toUserProfile(user: UserDoc | null) {
     researchPapers: user.researchPapers ?? [],
     certifications: user.certifications ?? [],
     isProfileComplete: user.isProfileComplete,
+    emailVerified: user.emailVerified ?? false,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt?.toISOString(),
   };

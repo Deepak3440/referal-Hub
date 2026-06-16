@@ -25,6 +25,15 @@ export async function connectDB(): Promise<void> {
   }
   await UserModel.syncIndexes();
   await ensureDefaultUserPoints();
+  await ensureExistingUsersEmailVerified();
+}
+
+/** Accounts created before email verification should keep working. */
+async function ensureExistingUsersEmailVerified(): Promise<void> {
+  await UserModel.updateMany(
+    { emailVerified: { $exists: false } },
+    { $set: { emailVerified: true } },
+  );
 }
 
 /** Give existing users with 0/missing points the configured starting balance (safe, idempotent). */

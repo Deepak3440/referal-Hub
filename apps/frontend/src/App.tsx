@@ -9,6 +9,8 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import SignInPage from "@/pages/auth/sign-in";
 import SignUpPage from "@/pages/auth/sign-up";
+import VerifyEmailPage from "@/pages/auth/verify-email";
+import VerifyEmailPendingPage from "@/pages/auth/verify-email-pending";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 
 import Home from "@/pages/home";
@@ -51,6 +53,8 @@ function Router() {
       <Route path="/" component={HomeRedirect} />
       <Route path="/sign-in" component={SignInPage} />
       <Route path="/sign-up" component={SignUpPage} />
+      <Route path="/verify-email" component={VerifyEmailPage} />
+      <Route path="/verify-email-pending" component={VerifyEmailPendingPage} />
 
       <Route path="/complete-profile">
         <Redirect to="/home" />

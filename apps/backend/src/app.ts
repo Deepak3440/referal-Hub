@@ -35,6 +35,13 @@ app.use(express.urlencoded({ extended: true, limit: "30mb" }));
 
 app.use("/api/uploads", express.static(path.join(getUploadsRoot())));
 
+/** Legacy email links: /verify-email?token=... → API handler */
+app.get("/verify-email", (req, res) => {
+  const token = typeof req.query.token === "string" ? req.query.token.trim() : "";
+  const qs = token ? `?token=${encodeURIComponent(token)}` : "";
+  res.redirect(302, `/api/auth/verify-email${qs}`);
+});
+
 app.use("/api", router);
 
 export default app;
