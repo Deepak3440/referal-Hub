@@ -117,13 +117,16 @@ export function AppSidebar({
   ];
 
   return (
-    <aside className="font-sidebar flex h-full min-h-[100dvh] w-[252px] shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
+    <aside className="font-sidebar relative flex h-full min-h-[100dvh] w-[252px] shrink-0 flex-col bg-sidebar text-sidebar-foreground">
+      <div className="fade-bar-x absolute inset-x-0 top-0 z-10" aria-hidden />
+      <div className="fade-bar-y absolute right-0 top-0 bottom-0 z-10" aria-hidden />
       <Link
         href="/feed"
         onClick={onNavigate}
-        className="flex h-[60px] items-center gap-3 px-5 border-b border-sidebar-border hover:bg-white/[0.06] transition-colors"
+        className="relative flex h-[60px] items-center gap-3 px-5 hover:bg-white/[0.06] transition-colors"
         aria-label="Go to feed"
       >
+        <div className="fade-bar-x absolute inset-x-4 bottom-0 opacity-70" aria-hidden />
         <BrandLogo className="h-10 w-10" linked={false} />
         <p className="font-bold text-base tracking-tight text-sidebar-foreground leading-none">
           {BRAND.name}
@@ -174,7 +177,8 @@ export function AppSidebar({
         })}
       </nav>
 
-      <div className="border-t border-sidebar-border/80 mt-auto">
+      <div className="relative border-t border-white/[0.08] mt-auto">
+        <div className="fade-bar-x absolute inset-x-4 top-0 opacity-60" aria-hidden />
         <SidebarProfile user={user} onSignOut={onSignOut} />
       </div>
     </aside>

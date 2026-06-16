@@ -29,7 +29,9 @@ export function DashboardHeader({
   const pageTitle = getPageTitle(location);
 
   return (
-    <header className="sticky top-0 z-30 shrink-0 border-b border-border bg-card shadow-sm">
+    <header className="sticky top-0 z-30 shrink-0 bg-card shadow-sm relative">
+      <div className="fade-bar-x absolute inset-x-0 top-0" aria-hidden />
+      <div className="fade-bar-x absolute inset-x-0 bottom-0 opacity-60" aria-hidden />
       <div className="flex h-[60px] items-center gap-4 px-4 lg:px-6">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>

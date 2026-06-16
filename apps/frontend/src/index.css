@@ -208,3 +208,28 @@
     font-family: var(--app-font-sidebar);
   }
 }
+
+@layer utilities {
+  /* Subtle accent — top edge & section dividers */
+  .fade-bar-x {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--primary) / 0.18) 42%,
+      hsl(191.6 67.9% 52.4% / 0.28) 50%,
+      hsl(var(--primary) / 0.18) 58%,
+      transparent 100%
+    );
+  }
+
+  .fade-bar-y {
+    width: 1px;
+    background: linear-gradient(
+      180deg,
+      hsl(var(--primary) / 0.12) 0%,
+      hsl(191.6 67.9% 52.4% / 0.2) 45%,
+      transparent 100%
+    );
+  }
+}
