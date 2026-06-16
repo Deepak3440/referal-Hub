@@ -1,15 +1,16 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 export default function Landing() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="px-6 py-4 flex items-center justify-between border-b">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded flex items-center justify-center text-primary-foreground font-bold">{BRAND.logoLetter}</div>
+        <Link href="/" className="flex items-center gap-2">
+          <BrandLogo className="h-8 w-8" linked={false} />
           <span className="font-bold text-xl tracking-tight">{BRAND.name}</span>
-        </div>
+        </Link>
         <div className="flex gap-4">
           <Link href="/sign-in" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2">
             Sign In

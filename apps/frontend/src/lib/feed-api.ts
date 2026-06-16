@@ -84,6 +84,21 @@ export const feedApi = {
     }),
   deletePost: (id: number) =>
     httpRequest<void>(`/posts/${id}`, { method: "DELETE" }),
+  updatePost: (
+    id: number,
+    body: {
+      content: string;
+      imageUrl?: string | null;
+      videoUrl?: string | null;
+      linkUrl?: string | null;
+      linkLabel?: string | null;
+      postType?: "update" | "job";
+    },
+  ) =>
+    httpRequest<FeedPost>(`/posts/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
 };
 
 export const FEED_QUERY_KEYS = {

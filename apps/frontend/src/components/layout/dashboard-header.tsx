@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +11,6 @@ import {
 import { AppSidebar } from "./app-sidebar";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { getPageTitle } from "@/lib/page-titles";
-import { BRAND } from "@/lib/brand";
 import type { UserProfile } from "@workspace/api-client-react";
 
 export function DashboardHeader({
@@ -51,22 +50,10 @@ export function DashboardHeader({
           </SheetContent>
         </Sheet>
 
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <Link
-            href="/home"
-            className="hidden sm:flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm shrink-0 shadow-sm hover:opacity-90 transition-opacity"
-            aria-label="Go to dashboard"
-          >
-            {BRAND.logoLetter}
-          </Link>
-          <div className="min-w-0 border-l border-border/0 sm:border-border sm:pl-3">
-            <h1 className="text-base sm:text-lg font-semibold tracking-tight truncate leading-tight">
-              {pageTitle}
-            </h1>
-            <p className="text-[11px] text-muted-foreground truncate hidden sm:block">
-              {BRAND.name}
-            </p>
-          </div>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-base sm:text-lg font-semibold tracking-tight truncate leading-tight">
+            {pageTitle}
+          </h1>
         </div>
 
         <div className="ml-auto shrink-0">

@@ -1,5 +1,6 @@
 export const BRAND = {
   name: "Referaa",
+  logoSrc: "/logo.png",
   /** Short — sidebar, badges (feed + mentorship + referrals) */
   tagline: "Refer · Mentor · Connect",
   domain: "referaa.com",

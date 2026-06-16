@@ -193,13 +193,13 @@ export default function ConsultPage() {
             {expertsLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-[120px] rounded-xl" />
+                  <Skeleton key={i} className="h-[156px] rounded-xl" />
                 ))}
               </div>
             ) : mentors.length > 0 ? (
               <div className="space-y-3">
                 {mentors.map((user) => (
-                  <MentorListCard key={user.id} user={user} />
+                  <MentorListCard key={user.id} user={user} currentUserId={me?.id} />
                 ))}
               </div>
             ) : (

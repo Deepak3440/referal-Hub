@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import type { UserProfile } from "@workspace/api-client-react";
 import { isAlumniMember, memberTypeLabel } from "@/lib/user-utils";
 import { BRAND } from "@/lib/brand";
+import { BrandLogo } from "@/components/layout/brand-logo";
 import { resolveUploadUrl, withCacheBust } from "@/lib/upload-url";
 
 type NavItem = {
@@ -53,7 +54,7 @@ function SidebarProfile({
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-card" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold truncate leading-tight">{user.fullName}</p>
+            <p className="text-sm font-bold truncate leading-tight">{user.fullName}</p>
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               <Badge variant="secondary" className="text-[10px] h-5 px-1.5 capitalize font-normal">
                 {memberTypeLabel(user.memberType)}
@@ -71,7 +72,7 @@ function SidebarProfile({
             type="button"
             variant="outline"
             size="sm"
-            className="w-full h-9 text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/5 transition-colors"
+            className="w-full h-9 font-semibold text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/5 transition-colors"
             onClick={onSignOut}
           >
             <LogOut className="h-4 w-4 mr-2" />
@@ -118,14 +119,12 @@ export function AppSidebar({
         className="flex h-[60px] items-center gap-3 px-5 border-b border-sidebar-border hover:bg-muted/40 transition-colors"
         aria-label="Go to dashboard"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-base shadow-md shadow-primary/25 shrink-0">
-          {BRAND.logoLetter}
-        </div>
-        <p className="font-bold text-[15px] tracking-tight text-foreground leading-none">{BRAND.name}</p>
+        <BrandLogo className="h-10 w-10" linked={false} />
+        <p className="font-bold text-base tracking-tight text-foreground leading-none">{BRAND.name}</p>
       </Link>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-        <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+        <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
           Menu
         </p>
         {navItems.map((item) => {
@@ -138,14 +137,19 @@ export function AppSidebar({
               href={item.href}
               onClick={onNavigate}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all relative",
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all relative",
                 isActive
-                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20 font-bold"
+                  : "text-foreground/80 font-semibold hover:bg-muted/80 hover:text-foreground",
               )}
             >
-              <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary-foreground")} />
-              <span className="flex-1">{item.label}</span>
+              <Icon
+                className={cn(
+                  "h-[1.125rem] w-[1.125rem] shrink-0 stroke-[2.25]",
+                  isActive && "text-primary-foreground",
+                )}
+              />
+              <span className="flex-1 tracking-tight">{item.label}</span>
               {item.badge != null && item.badge > 0 && (
                 <span
                   className={cn(

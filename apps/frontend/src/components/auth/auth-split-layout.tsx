@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Briefcase, Trophy, Users, Video } from "lucide-react";
 import { BRAND } from "@/lib/brand";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 export function AuthSplitLayout({
   title,
@@ -22,9 +23,7 @@ export function AuthSplitLayout({
 
         <div className="relative z-10">
           <Link href="/" className="inline-flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 font-bold text-lg backdrop-blur">
-              {BRAND.logoLetter}
-            </div>
+            <BrandLogo className="h-11 w-11" linked={false} />
             <span className="font-bold text-2xl tracking-tight">{BRAND.name}</span>
           </Link>
         </div>
@@ -69,9 +68,7 @@ export function AuthSplitLayout({
       {/* Right — form panel */}
       <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-14 bg-background">
         <div className="lg:hidden mb-8 flex items-center gap-2">
-          <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">
-            {BRAND.logoLetter}
-          </div>
+          <BrandLogo className="h-9 w-9" href="/" />
           <span className="font-bold text-xl">{BRAND.name}</span>
         </div>
 

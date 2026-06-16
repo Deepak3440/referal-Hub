@@ -17,7 +17,7 @@ import { notifyPostComment, notifyPostLike } from "../services/notification-trig
 
 const router: IRouter = Router();
 
-const CreatePostBody = z
+const PostBodySchema = z
   .object({
     content: z.string().min(1, "Write something to post").max(5000),
     imageUrl: z.string().min(1).optional().nullable(),
@@ -46,6 +46,9 @@ const CreatePostBody = z
       }
     }
   });
+
+const CreatePostBody = PostBodySchema;
+const UpdatePostBody = PostBodySchema;
 
 const UploadMediaBody = z.object({
   data: z.string().min(1),
@@ -271,6 +274,48 @@ router.post("/posts/:id/comments", requireAuth, async (req, res): Promise<void> 
   const enrichedComment = await enrichComment(comment.toObject());
 
   res.status(201).json({ comment: enrichedComment, post: enrichedPost });
+});
+
+router.put("/posts/:id", requireAuth, async (req, res): Promise<void> => {
+  const user = (req as { currentUser: { id: number } }).currentUser;
+  const postId = parseInt(String(req.params.id), 10);
+
+  if (Number.isNaN(postId)) {
+    res.status(400).json({ error: "Invalid post id" });
+    return;
+  }
+
+  const existing = await PostModel.findOne({ id: postId });
+  if (!existing) {
+    res.status(404).json({ error: "Post not found" });
+    return;
+  }
+
+  if (existing.authorId !== user.id) {
+    res.status(403).json({ error: "You can only edit your own posts." });
+    return;
+  }
+
+  const parsed = UpdatePostBody.safeParse({
+    ...req.body,
+    postType: req.body?.postType ?? existing.postType ?? "update",
+  });
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
+    return;
+  }
+
+  const { content, imageUrl, videoUrl, linkUrl, linkLabel, postType } = parsed.data;
+
+  existing.content = content.trim();
+  existing.imageUrl = imageUrl ?? null;
+  existing.videoUrl = videoUrl ?? null;
+  existing.linkUrl = linkUrl?.trim() ?? null;
+  existing.linkLabel = linkLabel?.trim() ?? null;
+  existing.postType = postType ?? "update";
+  await existing.save();
+
+  res.json(await enrichPost(existing.toObject(), user.id));
 });
 
 router.delete("/posts/:id", requireAuth, async (req, res): Promise<void> => {
