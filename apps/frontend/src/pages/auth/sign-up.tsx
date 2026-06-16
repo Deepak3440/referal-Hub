@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { BRAND } from "@/lib/brand";
+import {
+  ProfilePhotoPicker,
+  type ProfilePhotoValue,
+} from "@/components/profile/profile-photo-picker";
 
 export default function SignUpPage() {
   const [, setLocation] = useLocation();
@@ -21,6 +25,7 @@ export default function SignUpPage() {
   const [currentRole, setCurrentRole] = useState("");
   const [experienceYears, setExperienceYears] = useState("");
   const [isConsultant, setIsConsultant] = useState<"yes" | "no">("no");
+  const [profilePhoto, setProfilePhoto] = useState<ProfilePhotoValue>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -47,6 +52,12 @@ export default function SignUpPage() {
             company: company.trim(),
             currentRole: currentRole.trim(),
             experienceYears: Number(experienceYears),
+          }
+        : {}),
+      ...(profilePhoto
+        ? {
+            avatarData: profilePhoto.data,
+            avatarMimeType: profilePhoto.mimeType,
           }
         : {}),
     };
@@ -84,6 +95,13 @@ export default function SignUpPage() {
             className="h-11"
           />
         </div>
+
+        <ProfilePhotoPicker
+          fullName={fullName}
+          value={profilePhoto}
+          onChange={setProfilePhoto}
+          onError={setError}
+        />
 
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>

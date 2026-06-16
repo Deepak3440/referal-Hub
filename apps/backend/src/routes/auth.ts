@@ -8,6 +8,7 @@ import {
 } from "@workspace/db";
 import { signToken } from "../lib/jwt";
 import { REWARD_CONFIG } from "../lib/rewards";
+import { saveAvatarImage } from "../lib/uploads";
 
 const router: IRouter = Router();
 
@@ -24,8 +25,19 @@ const SignUpBody = z
     currentRole: z.string().optional(),
     experienceYears: z.coerce.number().min(0).max(50).optional(),
     isConsultant: z.boolean(),
+    avatarData: z.string().min(1).optional(),
+    avatarMimeType: z.string().min(1).optional(),
   })
   .superRefine((data, ctx) => {
+    const hasAvatarData = Boolean(data.avatarData?.trim());
+    const hasAvatarMime = Boolean(data.avatarMimeType?.trim());
+    if (hasAvatarData !== hasAvatarMime) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Invalid profile photo upload",
+        path: ["avatarData"],
+      });
+    }
     if (data.isWorkingProfessional) {
       if (!data.company?.trim()) {
         ctx.addIssue({ code: "custom", message: "Organization name is required", path: ["company"] });
@@ -62,8 +74,22 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
       company,
       currentRole,
       experienceYears,
+      avatarData,
+      avatarMimeType,
     } = parsed.data;
     const normalizedEmail = email.toLowerCase().trim();
+
+    let avatarUrl: string | null = null;
+    if (avatarData?.trim() && avatarMimeType?.trim()) {
+      try {
+        avatarUrl = saveAvatarImage(avatarData.trim(), avatarMimeType.trim()).url;
+      } catch (err) {
+        res.status(400).json({
+          error: err instanceof Error ? err.message : "Invalid profile photo",
+        });
+        return;
+      }
+    }
 
     const existing = await UserModel.findOne({ email: normalizedEmail }).select("+passwordHash");
     if (existing) {
@@ -86,6 +112,7 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
       company: isWorkingProfessional ? company?.trim() : null,
       currentRole: isWorkingProfessional ? currentRole?.trim() : null,
       experienceYears: isWorkingProfessional ? experienceYears : null,
+      avatarUrl,
     });
 
     const token = signToken(user.id);

@@ -36,6 +36,30 @@ export function formatExperienceYears(years: number | null): string {
   return `${years} yr${years === 1 ? "" : "s"}`;
 }
 
+export const MENTORSHIP_DURATION_OPTIONS = [
+  { value: 30, label: "30 minutes" },
+  { value: 45, label: "45 minutes" },
+  { value: 60, label: "60 minutes" },
+] as const;
+
+export function formatMentorshipSession(
+  profile: Pick<UserProfile, "mentorshipDurationMinutes" | "mentorshipPriceInr">,
+): string | null {
+  const minutes = profile.mentorshipDurationMinutes;
+  if (minutes == null || minutes <= 0) return null;
+
+  const duration = `${minutes} min`;
+  const price = profile.mentorshipPriceInr;
+  if (price == null || price <= 0) return `${duration} · Free`;
+  return `${duration} · ₹${price.toLocaleString("en-IN")}`;
+}
+
+export function hasMentorshipSessionOffer(
+  profile: Pick<UserProfile, "mentorshipDurationMinutes" | "mentorshipPriceInr">,
+): boolean {
+  return profile.mentorshipDurationMinutes != null && profile.mentorshipDurationMinutes > 0;
+}
+
 export type MentorFilters = {
   q?: string;
   branch?: string;

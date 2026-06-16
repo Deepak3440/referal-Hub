@@ -17,14 +17,17 @@ import {
   ProfileForm,
   formValuesToPayload,
   type ProfileFormValues,
+  type ProfilePhotoSubmit,
 } from "@/components/profile/profile-form";
 import { useToast } from "@/hooks/use-toast";
 import { ProfileProfessionalCard } from "@/components/profile/profile-professional-card";
 import { MentorshipProfileView } from "@/components/profile/mentorship-profile-view";
 import { ReferralStatsCard } from "@/components/profile/referral-stats-card";
 import { AddPointsCard } from "@/components/profile/add-points-card";
+import { DeleteAccountCard } from "@/components/profile/delete-account-card";
 import { referralStatsApi, REFERRAL_STATS_QUERY_KEYS } from "@/lib/referral-stats-api";
 import { isAlumniMember } from "@/lib/user-utils";
+import { resolveUploadUrl, withCacheBust } from "@/lib/upload-url";
 
 export default function MyProfile() {
   const [isEditing, setIsEditing] = useState(false);
@@ -41,9 +44,9 @@ export default function MyProfile() {
     enabled: isAlumni && !!profile?.id,
   });
 
-  const handleSave = (data: ProfileFormValues) => {
+  const handleSave = (data: ProfileFormValues, photo?: ProfilePhotoSubmit) => {
     updateMe.mutate(
-      { data: formValuesToPayload(data) },
+      { data: { ...formValuesToPayload(data), ...photo } },
       {
         onSuccess: (updatedUser) => {
           queryClient.setQueryData(getGetMeQueryKey(), updatedUser);
@@ -92,6 +95,12 @@ export default function MyProfile() {
             onSubmit={handleSave}
             isPending={updateMe.isPending}
             onCancel={() => setIsEditing(false)}
+            onPhotoUpdated={(avatarUrl) => {
+              queryClient.setQueryData(getGetMeQueryKey(), (old) =>
+                old ? { ...old, avatarUrl } : old,
+              );
+              toast({ title: "Profile photo updated" });
+            }}
           />
         </DashboardCard>
       </div>
@@ -106,7 +115,9 @@ export default function MyProfile() {
         <div className="h-32 bg-primary/10"></div>
         <div className="px-4 sm:px-6 pb-6 relative">
           <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-background absolute -top-10 sm:-top-12 left-4 sm:left-6">
-            <AvatarImage src={profile.avatarUrl || undefined} />
+            <AvatarImage
+              src={withCacheBust(resolveUploadUrl(profile.avatarUrl), profile.id)}
+            />
             <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
               {profile.fullName.charAt(0)}
             </AvatarFallback>
@@ -215,6 +226,8 @@ export default function MyProfile() {
         </div>
         )}
       </div>
+
+      <DeleteAccountCard email={profile.email} />
     </div>
   );
 }

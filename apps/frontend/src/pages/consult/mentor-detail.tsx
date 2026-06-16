@@ -9,6 +9,7 @@ import { ArrowLeft, Trophy, Video, GraduationCap, Building2, BookOpen } from "lu
 import { DashboardCard } from "@/components/layout/page-header";
 import { MentorshipProfileView } from "@/components/profile/mentorship-profile-view";
 import { ConsultRequestDialog } from "@/components/consult/consult-request-dialog";
+import { MentorshipSessionOffer } from "@/components/consult/mentorship-session-offer";
 import { consultApi, CONSULT_QUERY_KEYS } from "@/lib/consult-api";
 import { getPrimaryEducation } from "@/lib/mentor-utils";
 import { useToast } from "@/hooks/use-toast";
@@ -109,6 +110,7 @@ export default function MentorDetail() {
                   {profile.experienceYears ? ` · ${profile.experienceYears} yrs exp` : ""}
                 </p>
               )}
+              <MentorshipSessionOffer profile={profile} variant="onPrimary" />
             </div>
             <ConsultRequestDialog
               consultantName={profile.fullName}

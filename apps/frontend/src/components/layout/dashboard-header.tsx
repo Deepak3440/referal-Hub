@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,9 +52,13 @@ export function DashboardHeader({
         </Sheet>
 
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="hidden sm:flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm shrink-0 shadow-sm">
+          <Link
+            href="/home"
+            className="hidden sm:flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm shrink-0 shadow-sm hover:opacity-90 transition-opacity"
+            aria-label="Go to dashboard"
+          >
             {BRAND.logoLetter}
-          </div>
+          </Link>
           <div className="min-w-0 border-l border-border/0 sm:border-border sm:pl-3">
             <h1 className="text-base sm:text-lg font-semibold tracking-tight truncate leading-tight">
               {pageTitle}

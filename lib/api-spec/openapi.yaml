@@ -506,6 +506,10 @@ components:
           type: boolean
         isConsultant:
           type: boolean
+        mentorshipDurationMinutes:
+          type: ["integer", "null"]
+        mentorshipPriceInr:
+          type: ["integer", "null"]
         memberType:
           type: string
           enum: [student, alumni]
@@ -635,6 +639,10 @@ components:
           type: boolean
         isConsultant:
           type: boolean
+        mentorshipDurationMinutes:
+          type: integer
+        mentorshipPriceInr:
+          type: integer
 
     Job:
       type: object

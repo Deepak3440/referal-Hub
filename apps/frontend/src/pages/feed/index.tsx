@@ -13,7 +13,7 @@ import {
   PaginationItem,
 } from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
-import { feedApi, FEED_QUERY_KEYS, FEED_PAGE_SIZE } from "@/lib/feed-api";
+import { feedApi, FEED_QUERY_KEYS, FEED_PAGE_SIZE, type FeedListResponse } from "@/lib/feed-api";
 import { feedRangeLabel } from "@/lib/feed-utils";
 import { isAlumniMember } from "@/lib/user-utils";
 import { ChevronLeft, ChevronRight, Rss } from "lucide-react";
@@ -114,11 +114,35 @@ export default function FeedPage() {
 
   const deleteMutation = useMutation({
     mutationFn: feedApi.deletePost,
-    onSuccess: () => {
-      toast({ title: "Post removed" });
-      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+    onMutate: async (postId) => {
+      await queryClient.cancelQueries({ queryKey: FEED_QUERY_KEYS.list(page) });
+      const previous = queryClient.getQueryData<FeedListResponse>(FEED_QUERY_KEYS.list(page));
+
+      queryClient.setQueryData(FEED_QUERY_KEYS.list(page), (old) => {
+        if (!old) return old;
+        const items = old.items.filter((p) => p.id !== postId);
+        const total = Math.max(0, old.total - 1);
+        return {
+          ...old,
+          items,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / FEED_PAGE_SIZE)),
+        };
+      });
+
+      return { previous };
     },
-    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
+    onSuccess: () => {
+      toast({ title: "Post deleted" });
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      queryClient.invalidateQueries({ queryKey: FEED_QUERY_KEYS.contributors });
+    },
+    onError: (err: Error, _postId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(FEED_QUERY_KEYS.list(page), context.previous);
+      }
+      toast({ title: err.message, variant: "destructive" });
+    },
   });
 
   return (
@@ -166,8 +190,7 @@ export default function FeedPage() {
                   post={post}
                   page={page}
                   currentUserId={me?.id}
-                  canDelete={canPost}
-                  isDeleting={deleteMutation.isPending}
+                  isDeleting={deleteMutation.isPending && deleteMutation.variables === post.id}
                   onDelete={(id) => deleteMutation.mutate(id)}
                 />
               ))}

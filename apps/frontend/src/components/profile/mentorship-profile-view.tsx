@@ -9,7 +9,10 @@ import {
   Layers,
   Award,
   FlaskConical,
+  Clock,
 } from "lucide-react";
+import { MentorshipSessionOffer } from "@/components/consult/mentorship-session-offer";
+import { hasMentorshipSessionOffer } from "@/lib/mentor-utils";
 
 function SectionBlock({
   step,
@@ -51,6 +54,7 @@ export function MentorshipProfileView({ profile }: { profile: UserProfile }) {
   const certs = profile.certifications ?? [];
 
   const hasAny =
+    hasMentorshipSessionOffer(profile) ||
     profile.bio ||
     work.length > 0 ||
     profile.skills?.length > 0 ||
@@ -75,6 +79,16 @@ export function MentorshipProfileView({ profile }: { profile: UserProfile }) {
         <BookOpen className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-bold">Mentorship Profile</h2>
       </div>
+
+      {hasMentorshipSessionOffer(profile) && (
+        <DashboardCard className="p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="h-4 w-4 text-primary" />
+            <h3 className="font-semibold">Session offer</h3>
+          </div>
+          <MentorshipSessionOffer profile={profile} />
+        </DashboardCard>
+      )}
 
       <SectionBlock step={1} title="About (Professional Summary)" icon={FileText} empty={!profile.bio}>
         <p className="text-muted-foreground whitespace-pre-wrap text-sm leading-relaxed">{profile.bio}</p>

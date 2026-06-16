@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -10,6 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { MentorshipFormSections } from "@/components/profile/mentorship-form-sections";
+import {
+  ProfilePhotoPicker,
+  type ProfilePhotoValue,
+} from "@/components/profile/profile-photo-picker";
 import type {
   CertificationEntry,
   EducationEntry,
@@ -63,6 +67,8 @@ export const profileSchema = z
     currentRole: z.string().optional(),
     experienceYears: z.coerce.number().min(0).max(50).optional(),
     isConsultant: z.enum(["yes", "no"]),
+    mentorshipDurationMinutes: z.coerce.number().optional(),
+    mentorshipPriceInr: z.coerce.number().min(0).optional(),
     skills: z.string().optional(),
     linkedinUrl: z.string().url().optional().or(z.literal("")),
     workExperiences: z.array(workExperienceSchema).default([]),
@@ -87,12 +93,34 @@ export const profileSchema = z
     if (data.isConsultant === "yes" && !skillsOk) {
       ctx.addIssue({ code: "custom", message: "Add at least one skill", path: ["skills"] });
     }
+    if (data.isConsultant === "yes") {
+      const duration = data.mentorshipDurationMinutes;
+      if (!duration || ![30, 45, 60].includes(duration)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Select session duration (30, 45, or 60 min)",
+          path: ["mentorshipDurationMinutes"],
+        });
+      }
+      if (data.mentorshipPriceInr == null || Number.isNaN(data.mentorshipPriceInr)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Enter session fee (use 0 for free)",
+          path: ["mentorshipPriceInr"],
+        });
+      }
+    }
     if (data.isConsultant === "no" && !skillsOk) {
       ctx.addIssue({ code: "custom", message: "At least one skill is required", path: ["skills"] });
     }
   });
 
 export type ProfileFormValues = z.infer<typeof profileSchema>;
+
+export type ProfilePhotoSubmit = {
+  avatarData: string;
+  avatarMimeType: string;
+};
 
 function mapWork(list?: UserProfile["workExperiences"]): WorkExperienceEntry[] {
   return (list ?? []).map((e) => ({
@@ -149,6 +177,8 @@ export function profileToFormValues(profile: UserProfile): ProfileFormValues {
     currentRole: profile.currentRole || "",
     experienceYears: profile.experienceYears || 0,
     isConsultant: profile.isConsultant ? "yes" : "no",
+    mentorshipDurationMinutes: profile.mentorshipDurationMinutes ?? 30,
+    mentorshipPriceInr: profile.mentorshipPriceInr ?? 0,
     skills: profile.skills?.join(", ") || "",
     linkedinUrl: profile.linkedinUrl || "",
     workExperiences: mapWork(profile.workExperiences),
@@ -219,12 +249,16 @@ export function formValuesToPayload(data: ProfileFormValues) {
     experienceYears: isPro ? data.experienceYears : 0,
     skills: (data.skills ?? "").split(",").map((s) => s.trim()).filter(Boolean),
     linkedinUrl: data.linkedinUrl,
+    mentorshipDurationMinutes: null as number | null,
+    mentorshipPriceInr: null as number | null,
   };
 
   if (!isConsultant) return base;
 
   return {
     ...base,
+    mentorshipDurationMinutes: data.mentorshipDurationMinutes ?? 30,
+    mentorshipPriceInr: data.mentorshipPriceInr ?? 0,
     workExperiences: cleanWork(data.workExperiences),
     projects: cleanProjects(data.projects),
     education: cleanEducation(data.education),
@@ -268,13 +302,18 @@ export function ProfileForm({
   isPending,
   submitLabel = "Save changes",
   onCancel,
+  onPhotoUpdated,
 }: {
   profile: UserProfile;
-  onSubmit: (data: ProfileFormValues) => void;
+  onSubmit: (data: ProfileFormValues, photo?: ProfilePhotoSubmit) => void;
   isPending?: boolean;
   submitLabel?: string;
   onCancel?: () => void;
+  onPhotoUpdated?: (avatarUrl: string) => void;
 }) {
+  const [profilePhoto, setProfilePhoto] = useState<ProfilePhotoValue>(null);
+  const [photoError, setPhotoError] = useState("");
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: profileToFormValues(profile),
@@ -282,14 +321,42 @@ export function ProfileForm({
 
   const isPro = form.watch("isWorkingProfessional") === "yes";
   const isConsultant = form.watch("isConsultant") === "yes";
+  const fullName = form.watch("fullName");
 
   useEffect(() => {
     form.reset(profileToFormValues(profile));
+    setProfilePhoto(null);
+    setPhotoError("");
   }, [profile, form]);
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form
+        onSubmit={form.handleSubmit((data) => {
+          setPhotoError("");
+          onSubmit(
+            data,
+            profilePhoto
+              ? { avatarData: profilePhoto.data, avatarMimeType: profilePhoto.mimeType }
+              : undefined,
+          );
+        })}
+        className="space-y-6"
+      >
+        <ProfilePhotoPicker
+          fullName={fullName}
+          existingUrl={profile.avatarUrl}
+          cacheKey={profile.id}
+          value={profilePhoto}
+          onChange={setProfilePhoto}
+          onError={setPhotoError}
+          uploadOnPick
+          onUploaded={onPhotoUpdated}
+        />
+        {photoError && (
+          <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{photoError}</p>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}

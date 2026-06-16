@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ProfileFormValues } from "@/components/profile/profile-form";
+import { MENTORSHIP_DURATION_OPTIONS } from "@/lib/mentor-utils";
 import {
   EMPTY_CERT,
   EMPTY_EDUCATION,
@@ -66,6 +67,65 @@ export function MentorshipFormSections({ control }: { control: Control<ProfileFo
         <p className="text-sm text-muted-foreground">
           Fill these sections so members know your background before booking a session.
         </p>
+      </div>
+
+      <div className="rounded-xl border border-primary/25 bg-card p-4 space-y-4">
+        <div>
+          <h3 className="font-semibold text-foreground">Session duration & fee</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Shown on your mentor card when members browse mentorship.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={control}
+            name="mentorshipDurationMinutes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Session duration</FormLabel>
+                <Select
+                  value={field.value ? String(field.value) : "30"}
+                  onValueChange={(v) => field.onChange(Number(v))}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select duration" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {MENTORSHIP_DURATION_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={String(opt.value)}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="mentorshipPriceInr"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Session fee (₹)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="500"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
+                </FormControl>
+                <p className="text-[11px] text-muted-foreground">Use 0 for a free session.</p>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
       </div>
 
       {/* 1. About */}

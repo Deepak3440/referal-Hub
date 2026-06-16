@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import type { UserProfile } from "@workspace/api-client-react";
 import { isAlumniMember, memberTypeLabel } from "@/lib/user-utils";
 import { BRAND } from "@/lib/brand";
+import { resolveUploadUrl, withCacheBust } from "@/lib/upload-url";
 
 type NavItem = {
   href: string;
@@ -42,7 +43,9 @@ function SidebarProfile({
         >
           <div className="relative shrink-0">
             <Avatar className="h-11 w-11 ring-2 ring-primary/20 ring-offset-2 ring-offset-card">
-              <AvatarImage src={user.avatarUrl || undefined} />
+              <AvatarImage
+                src={withCacheBust(resolveUploadUrl(user.avatarUrl), user.id)}
+              />
               <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
                 {user.fullName.charAt(0)}
               </AvatarFallback>
@@ -109,15 +112,17 @@ export function AppSidebar({
 
   return (
     <aside className="flex h-full w-[252px] shrink-0 flex-col bg-sidebar border-r border-sidebar-border">
-      <div className="flex h-[60px] items-center gap-3 px-5 border-b border-sidebar-border">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-base shadow-md shadow-primary/25">
+      <Link
+        href="/home"
+        onClick={onNavigate}
+        className="flex h-[60px] items-center gap-3 px-5 border-b border-sidebar-border hover:bg-muted/40 transition-colors"
+        aria-label="Go to dashboard"
+      >
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-base shadow-md shadow-primary/25 shrink-0">
           {BRAND.logoLetter}
         </div>
-        <div className="min-w-0">
-          <p className="font-bold text-[15px] tracking-tight text-foreground leading-none">{BRAND.name}</p>
-          <p className="text-[11px] text-muted-foreground mt-1">{BRAND.tagline}</p>
-        </div>
-      </div>
+        <p className="font-bold text-[15px] tracking-tight text-foreground leading-none">{BRAND.name}</p>
+      </Link>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
         <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">

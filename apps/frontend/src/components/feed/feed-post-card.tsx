@@ -27,6 +27,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { FeedLinkPreview, FeedPostImage } from "@/components/feed/feed-media";
 
@@ -34,16 +44,16 @@ type Props = {
   post: FeedPost;
   currentUserId?: number;
   page: number;
-  canDelete?: boolean;
   onDelete?: (id: number) => void;
   isDeleting?: boolean;
 };
 
-export function FeedPostCard({ post, currentUserId, page, canDelete, onDelete, isDeleting }: Props) {
+export function FeedPostCard({ post, currentUserId, page, onDelete, isDeleting }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const author = post.author;
   const youtubeEmbed = post.videoUrl ? getYoutubeEmbedUrl(post.videoUrl) : null;
@@ -134,24 +144,59 @@ export function FeedPostCard({ post, currentUserId, page, canDelete, onDelete, i
                 </p>
               </div>
 
-              {canDelete && isOwnPost && onDelete && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      disabled={isDeleting}
-                      onClick={() => onDelete(post.id)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete post
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              {isOwnPost && onDelete && (
+                <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 text-muted-foreground"
+                        aria-label="Post options"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        disabled={isDeleting}
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setConfirmDeleteOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete post
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This removes the post from the feed. Comments and likes on this post will
+                          also be deleted. This cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          disabled={isDeleting}
+                          onClick={() => {
+                            onDelete(post.id);
+                            setConfirmDeleteOpen(false);
+                          }}
+                        >
+                          {isDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
               )}
             </div>
           </div>

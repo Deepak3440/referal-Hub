@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 
 const UPLOADS_ROOT = path.join(process.cwd(), "uploads");
 const POSTS_DIR = path.join(UPLOADS_ROOT, "posts");
+const AVATARS_DIR = path.join(UPLOADS_ROOT, "avatars");
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const ALLOWED_VIDEO_TYPES = new Set(["video/mp4", "video/webm"]);
@@ -18,6 +19,7 @@ function ensureDir(dir: string) {
 
 export function getUploadsRoot() {
   ensureDir(POSTS_DIR);
+  ensureDir(AVATARS_DIR);
   return UPLOADS_ROOT;
 }
 
@@ -68,4 +70,23 @@ export function savePostMedia(
     url: `/api/uploads/posts/${filename}`,
     kind: isImage ? "image" : "video",
   };
+}
+
+export function saveAvatarImage(base64Data: string, mimeType: string): { url: string } {
+  if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
+    throw new Error("Unsupported image type. Use JPG, PNG, WebP, or GIF.");
+  }
+
+  const buffer = Buffer.from(base64Data, "base64");
+  if (buffer.length > MAX_IMAGE_BYTES) {
+    throw new Error("Profile photo must be 5 MB or smaller.");
+  }
+
+  ensureDir(AVATARS_DIR);
+  const ext = extForMime(mimeType);
+  const filename = `${Date.now()}-${randomBytes(8).toString("hex")}${ext}`;
+  const filePath = path.join(AVATARS_DIR, filename);
+  fs.writeFileSync(filePath, buffer);
+
+  return { url: `/api/uploads/avatars/${filename}` };
 }

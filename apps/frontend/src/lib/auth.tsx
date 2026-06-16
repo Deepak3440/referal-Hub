@@ -22,6 +22,8 @@ export type SignUpPayload = {
   company?: string;
   currentRole?: string;
   experienceYears?: number;
+  avatarData?: string;
+  avatarMimeType?: string;
 };
 
 type AuthContextValue = {

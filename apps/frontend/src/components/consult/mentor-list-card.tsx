@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Building2, Briefcase, GraduationCap, MessageCircle, Video } from "lucide-react";
 import { formatExperienceYears, getMentorCardSummary } from "@/lib/mentor-utils";
+import { MentorshipSessionOffer } from "@/components/consult/mentorship-session-offer";
 import { cn } from "@/lib/utils";
 
 export function MentorListCard({ user }: { user: UserProfile }) {
@@ -74,6 +75,8 @@ export function MentorListCard({ user }: { user: UserProfile }) {
           )}
           <span>{formatExperienceYears(summary.experienceYears)}</span>
         </div>
+
+        <MentorshipSessionOffer profile={user} compact />
 
         {summary.about && (
           <p className="text-sm text-foreground/80 line-clamp-2 leading-relaxed">
