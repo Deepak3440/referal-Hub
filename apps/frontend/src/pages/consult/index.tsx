@@ -10,7 +10,7 @@ import { MentorFiltersBar, MentorTabBar } from "@/components/consult/mentor-filt
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Users, CalendarCheck, UserSearch, Sparkles, Video } from "lucide-react";
+import { Users, CalendarCheck, UserSearch, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MentorFilters } from "@/lib/mentor-utils";
 import { LeaderboardCard } from "@/components/profile/referral-stats-card";
@@ -107,52 +107,47 @@ export default function ConsultPage() {
   }, [sessions]);
 
   return (
-    <div className="space-y-5">
-      {/* Hero — LinkedIn-style */}
-      <section className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/8 via-card to-card overflow-hidden shadow-sm">
-        <div className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-primary">
-              <Sparkles className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wide">1:1 Mentorship</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
-              Learn from alumni mentors
-            </h2>
-            <p className="text-sm text-muted-foreground max-w-lg">
-              Book video sessions with professionals from your network. Filter by college, stream, or experience.
+    <div className="space-y-6">
+      <header className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              Mentorship
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-xl">
+              Connect with experienced alumni and grow in your career.
             </p>
           </div>
-          <div className="flex gap-3 shrink-0">
-            <div className="rounded-xl border bg-card/80 px-4 py-3 text-center min-w-[88px]">
-              <p className="text-xl font-bold text-primary">{mentors.length}</p>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="rounded-xl border border-border/80 bg-card px-4 py-2.5 text-center min-w-[80px] shadow-sm">
+              <p className="text-lg font-bold text-primary">{mentors.length}</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Mentors</p>
             </div>
             <button
               type="button"
               onClick={() => setTab("sessions")}
               className={cn(
-                "rounded-xl border bg-card/80 px-4 py-3 text-center min-w-[88px] transition-colors hover:bg-card hover:border-primary/30",
-                tab === "sessions" && "border-primary/40 ring-2 ring-primary/20 bg-card",
+                "rounded-xl border border-border/80 bg-card px-4 py-2.5 text-center min-w-[80px] shadow-sm transition-colors hover:border-primary/30",
+                tab === "sessions" && "border-primary/40 ring-2 ring-primary/15",
               )}
             >
-              <p className="text-xl font-bold">{sessions?.length ?? 0}</p>
+              <p className="text-lg font-bold">{sessions?.length ?? 0}</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sessions</p>
             </button>
           </div>
         </div>
-      </section>
 
-      <MentorTabBar
-        tab={tab}
-        onTabChange={setTab}
-        mentorCount={mentors.length}
-        pendingSessions={pendingIncoming}
-      />
+        <MentorTabBar
+          tab={tab}
+          onTabChange={setTab}
+          mentorCount={mentors.length}
+          pendingSessions={pendingIncoming}
+        />
+      </header>
 
       {tab === "experts" && (
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_272px] gap-5">
-          <div className="space-y-4 min-w-0">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_260px] gap-6">
+          <div className="space-y-5 min-w-0">
             <MentorFiltersBar
               filters={filters}
               onChange={setFilters}
@@ -160,19 +155,19 @@ export default function ConsultPage() {
             />
 
             {expertsLoading ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-[156px] rounded-xl" />
+                  <Skeleton key={i} className="h-[220px] rounded-2xl" />
                 ))}
               </div>
             ) : mentors.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {mentors.map((user) => (
                   <MentorListCard key={user.id} user={user} currentUserId={me?.id} />
                 ))}
               </div>
             ) : (
-              <div className="rounded-xl border bg-card text-center py-14 px-6">
+              <div className="rounded-2xl border border-border/80 bg-card text-center py-16 px-6 shadow-sm">
                 <UserSearch className="w-11 h-11 mx-auto text-muted-foreground/40 mb-3" />
                 <p className="font-medium">No mentors match your search</p>
                 <p className="text-sm text-muted-foreground mt-1.5 max-w-sm mx-auto">
@@ -192,7 +187,7 @@ export default function ConsultPage() {
 
           <aside className="space-y-4 xl:sticky xl:top-4 xl:self-start">
             <LeaderboardCard items={leaderboard?.items ?? []} />
-            <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground hidden xl:block">
+            <div className="rounded-2xl border border-border/80 bg-card p-5 text-sm text-muted-foreground hidden xl:block shadow-sm">
               <div className="flex items-center gap-2 text-foreground font-medium mb-2">
                 <Video className="h-4 w-4 text-primary" />
                 How it works
