@@ -4,13 +4,14 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useGetMe } from "@workspace/api-client-react";
 import { consultApi, CONSULT_QUERY_KEYS, type Consultation } from "@/lib/consult-api";
 import { ConsultBookDialog } from "@/components/consult/consult-book-dialog";
-import { ConsultSessionCard } from "@/components/consult/consult-session-card";
+import { ConsultSessionsTable } from "@/components/consult/consult-sessions-table";
 import { MentorListCard } from "@/components/consult/mentor-list-card";
 import { MentorFiltersBar, MentorTabBar } from "@/components/consult/mentor-filters";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Users, CalendarCheck, UserSearch, Sparkles, Video } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { MentorFilters } from "@/lib/mentor-utils";
 import { LeaderboardCard } from "@/components/profile/referral-stats-card";
 import { referralStatsApi, REFERRAL_STATS_QUERY_KEYS } from "@/lib/referral-stats-api";
@@ -18,45 +19,6 @@ import { referralStatsApi, REFERRAL_STATS_QUERY_KEYS } from "@/lib/referral-stat
 type Tab = "experts" | "sessions";
 
 const EMPTY_FILTERS: MentorFilters = { q: "", branch: "", college: "", graduationYear: "" };
-
-function SessionGroup({
-  title,
-  sessions,
-  meId,
-  onRespond,
-  onCancel,
-  onComplete,
-}: {
-  title: string;
-  sessions: Consultation[];
-  meId: number;
-  onRespond?: (s: Consultation) => void;
-  onCancel: (id: number) => void;
-  onComplete: (id: number) => void;
-}) {
-  if (!sessions.length) return null;
-  return (
-    <div className="space-y-3">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground px-1">
-        {title} ({sessions.length})
-      </h3>
-      {sessions.map((session) => (
-        <ConsultSessionCard
-          key={session.id}
-          session={session}
-          currentUserId={meId}
-          onRespond={
-            session.status === "pending" && session.consultantId === meId && onRespond
-              ? () => onRespond(session)
-              : undefined
-          }
-          onCancel={() => onCancel(session.id)}
-          onComplete={() => onComplete(session.id)}
-        />
-      ))}
-    </div>
-  );
-}
 
 export default function ConsultPage() {
   const [location] = useLocation();
@@ -166,10 +128,17 @@ export default function ConsultPage() {
               <p className="text-xl font-bold text-primary">{mentors.length}</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Mentors</p>
             </div>
-            <div className="rounded-xl border bg-card/80 px-4 py-3 text-center min-w-[88px]">
+            <button
+              type="button"
+              onClick={() => setTab("sessions")}
+              className={cn(
+                "rounded-xl border bg-card/80 px-4 py-3 text-center min-w-[88px] transition-colors hover:bg-card hover:border-primary/30",
+                tab === "sessions" && "border-primary/40 ring-2 ring-primary/20 bg-card",
+              )}
+            >
               <p className="text-xl font-bold">{sessions?.length ?? 0}</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sessions</p>
-            </div>
+            </button>
           </div>
         </div>
       </section>
@@ -240,32 +209,35 @@ export default function ConsultPage() {
       )}
 
       {tab === "sessions" && (
-        <div className="max-w-3xl space-y-6">
+        <div className="space-y-4">
           {sessionsLoading ? (
-            <Skeleton className="h-32 rounded-xl" />
+            <Skeleton className="h-48 rounded-xl" />
           ) : sessions && sessions.length > 0 ? (
             <>
-              <SessionGroup
-                title="Pending"
+              <ConsultSessionsTable
+                title="Pending requests"
                 sessions={groupedSessions.pending}
                 meId={me?.id ?? 0}
                 onRespond={setBookTarget}
                 onCancel={(id) => updateMutation.mutate({ id, status: "cancelled" })}
                 onComplete={(id) => updateMutation.mutate({ id, status: "completed" })}
+                actionsDisabled={updateMutation.isPending}
               />
-              <SessionGroup
-                title="Upcoming"
+              <ConsultSessionsTable
+                title="Upcoming sessions"
                 sessions={groupedSessions.scheduled}
                 meId={me?.id ?? 0}
                 onCancel={(id) => updateMutation.mutate({ id, status: "cancelled" })}
                 onComplete={(id) => updateMutation.mutate({ id, status: "completed" })}
+                actionsDisabled={updateMutation.isPending}
               />
-              <SessionGroup
-                title="Past"
+              <ConsultSessionsTable
+                title="Past sessions"
                 sessions={groupedSessions.done}
                 meId={me?.id ?? 0}
                 onCancel={(id) => updateMutation.mutate({ id, status: "cancelled" })}
                 onComplete={(id) => updateMutation.mutate({ id, status: "completed" })}
+                actionsDisabled={updateMutation.isPending}
               />
             </>
           ) : (
