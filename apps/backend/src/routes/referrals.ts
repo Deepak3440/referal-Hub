@@ -2,12 +2,10 @@ import { Router, type IRouter } from "express";
 import {
   ReferralModel,
   JobModel,
-  UserModel,
   MessageModel,
   getNextSequence,
   toReferral,
   toJob,
-  toUserProfile,
   type ReferralDoc,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth";
@@ -27,7 +25,7 @@ import {
   notifyReferralStatusChange,
 } from "../services/notification-triggers";
 import { referralAlreadyExistsMessage } from "../lib/referral-request";
-import { assertRequesterCanSendReferral } from "../services/referralPointsGuard";
+import { findPublicUserById, toPublicUserProfile } from "../lib/public-user";
 
 const router: IRouter = Router();
 
@@ -42,16 +40,16 @@ const UPDATE_STATUSES: ReferralStatus[] = [
 
 async function enrichReferral(referral: ReferralDoc) {
   const job = await JobModel.findOne({ id: referral.jobId }).lean();
-  const requester = await UserModel.findOne({ id: referral.requesterId }).lean();
-  const referrer = await UserModel.findOne({ id: referral.referrerId }).lean();
+  const requester = await findPublicUserById(referral.requesterId);
+  const referrer = await findPublicUserById(referral.referrerId);
 
   let enrichedJob = null;
   if (job) {
-    const poster = await UserModel.findOne({ id: job.posterId }).lean();
+    const poster = await findPublicUserById(job.posterId);
     const referralCount = await ReferralModel.countDocuments({ jobId: job.id });
     enrichedJob = {
       ...toJob(job),
-      poster: toUserProfile(poster),
+      poster: toPublicUserProfile(poster),
       isSaved: false,
       referralCount,
     };
@@ -60,8 +58,8 @@ async function enrichReferral(referral: ReferralDoc) {
   return {
     ...toReferral(referral),
     job: enrichedJob,
-    requester: toUserProfile(requester),
-    referrer: toUserProfile(referrer),
+    requester: toPublicUserProfile(requester),
+    referrer: toPublicUserProfile(referrer),
   };
 }
 

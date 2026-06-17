@@ -6,8 +6,10 @@ import {
   getNextSequence,
   toConsultation,
   toUserProfile,
+  publiclyVisibleUserFilter,
   type ConsultationDoc,
 } from "@workspace/db";
+import { findPublicUserById, toPublicUserProfile } from "../lib/public-user";
 import { requireAuth } from "../middlewares/auth";
 import { normalizeGoogleMeetLink } from "../lib/meet-link";
 import { createGoogleMeetLink, isGoogleMeetAutoCreateEnabled } from "../services/googleMeet";
@@ -32,13 +34,13 @@ const UpdateConsultationBody = z.object({
 
 async function enrichConsultation(doc: ConsultationDoc) {
   const [requester, consultant] = await Promise.all([
-    UserModel.findOne({ id: doc.requesterId }).lean(),
-    UserModel.findOne({ id: doc.consultantId }).lean(),
+    findPublicUserById(doc.requesterId),
+    findPublicUserById(doc.consultantId),
   ]);
   return {
     ...toConsultation(doc),
-    requester: toUserProfile(requester),
-    consultant: toUserProfile(consultant),
+    requester: toPublicUserProfile(requester),
+    consultant: toPublicUserProfile(consultant),
   };
 }
 
@@ -88,6 +90,7 @@ router.get("/consultations/experts", requireAuth, async (req, res): Promise<void
   let users = await UserModel.find({
     isConsultant: true,
     id: { $ne: user.id },
+    ...publiclyVisibleUserFilter,
   })
     .sort({ totalPoints: -1 })
     .lean();
@@ -168,8 +171,8 @@ router.post("/consultations", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const consultant = await UserModel.findOne({ id: consultantId }).lean();
-  if (!consultant) {
+  const consultant = await findPublicUserById(consultantId);
+  if (!consultant?.isConsultant) {
     res.status(404).json({ error: "User not found" });
     return;
   }

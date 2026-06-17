@@ -1,4 +1,4 @@
-import { ReferralModel, UserModel, toUserProfile } from "@workspace/db";
+import { ReferralModel, UserModel, toUserProfile, publiclyVisibleUserFilter } from "@workspace/db";
 
 const ACCEPTED_STATUSES = [
   "accepted",
@@ -128,6 +128,7 @@ export const referralStatsRepository = {
     const users = await UserModel.find({
       id: { $in: alumniIds },
       memberType: "alumni",
+      ...publiclyVisibleUserFilter,
     }).lean();
     const userMap = new Map(users.map((u) => [u.id, u]));
 

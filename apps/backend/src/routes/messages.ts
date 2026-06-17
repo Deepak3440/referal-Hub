@@ -1,11 +1,6 @@
 import { Router, type IRouter } from "express";
-import {
-  MessageModel,
-  UserModel,
-  getNextSequence,
-  toMessage,
-  toUserProfile,
-} from "@workspace/db";
+import { MessageModel, getNextSequence, toMessage } from "@workspace/db";
+import { findPublicUserById, toPublicUserProfile } from "../lib/public-user";
 import { requireAuth } from "../middlewares/auth";
 import { SendMessageBody } from "@workspace/api-zod";
 import { notifyNewMessage } from "../services/notification-triggers";
@@ -33,11 +28,12 @@ router.get("/messages", requireAuth, async (req, res): Promise<void> => {
 
     const parts = msg.conversationId.split("_").map(Number);
     const otherUserId = parts[0] === user.id ? parts[1] : parts[0];
-    const otherUser = await UserModel.findOne({ id: otherUserId }).lean();
+    const otherUser = await findPublicUserById(otherUserId);
+    if (!otherUser) continue;
 
     conversations.push({
       id: msg.conversationId,
-      otherUser: toUserProfile(otherUser),
+      otherUser: toPublicUserProfile(otherUser),
       lastMessage: msg.content,
       lastMessageAt: msg.createdAt.toISOString(),
       unreadCount: 0,
@@ -62,8 +58,8 @@ router.get("/messages/:conversationId", requireAuth, async (req, res): Promise<v
 
   const enriched = await Promise.all(
     msgs.map(async (m) => {
-      const sender = await UserModel.findOne({ id: m.senderId }).lean();
-      return { ...toMessage(m), sender: toUserProfile(sender) };
+      const sender = await findPublicUserById(m.senderId);
+      return { ...toMessage(m), sender: toPublicUserProfile(sender) };
     }),
   );
 
@@ -94,7 +90,7 @@ router.post("/messages/:conversationId", requireAuth, async (req, res): Promise<
     content: parsed.data.content,
   });
 
-  const sender = await UserModel.findOne({ id: msg.senderId }).lean();
+  const sender = await findPublicUserById(user.id);
 
   const otherUserId = parts[0] === user.id ? parts[1] : parts[0];
   const isReferralIntro = parsed.data.content.startsWith("📩");
@@ -107,7 +103,7 @@ router.post("/messages/:conversationId", requireAuth, async (req, res): Promise<
     });
   }
 
-  res.status(201).json({ ...toMessage(msg.toObject()), sender: toUserProfile(sender) });
+  res.status(201).json({ ...toMessage(msg.toObject()), sender: toPublicUserProfile(sender) });
 });
 
 export default router;

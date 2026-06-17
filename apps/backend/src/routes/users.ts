@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { UserModel, toUserProfile } from "@workspace/db";
+import { findPublicUserById, toPublicUserProfile } from "../lib/public-user";
 import { requireAuth } from "../middlewares/auth";
 import { UpdateMeBody } from "@workspace/api-zod";
 import { saveAvatarImage } from "../lib/uploads";
@@ -239,12 +240,18 @@ router.delete("/users/me", requireAuth, async (req, res): Promise<void> => {
 
 router.get("/users/:userId", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.userId) ? req.params.userId[0] : req.params.userId;
-  const user = await UserModel.findOne({ id: parseInt(raw, 10) }).lean();
+  const userId = parseInt(raw, 10);
+  if (Number.isNaN(userId)) {
+    res.status(400).json({ error: "Invalid user id" });
+    return;
+  }
+
+  const user = await findPublicUserById(userId);
   if (!user) {
     res.status(404).json({ error: "User not found" });
     return;
   }
-  res.json(toUserProfile(user));
+  res.json(toPublicUserProfile(user));
 });
 
 export default router;

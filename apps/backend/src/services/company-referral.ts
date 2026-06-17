@@ -6,7 +6,9 @@ import {
   getNextSequence,
   toUserProfile,
   toCompanyReferralRequest,
+  publiclyVisibleUserFilter,
 } from "@workspace/db";
+import { findPublicUserById, findPublicUsersByIds } from "../lib/public-user";
 import { buildConversationId } from "../lib/conversation";
 import { createNotification } from "./notification.service";
 
@@ -32,6 +34,7 @@ export async function listCompanyReferrers(
   const alumni = await UserModel.find({
     memberType: "alumni",
     company: { $exists: true, $nin: [null, ""] },
+    ...publiclyVisibleUserFilter,
   })
     .select("id company")
     .lean();
@@ -96,7 +99,7 @@ export async function listCompanyReferralRequestsForReferrer(referrerId: number)
     .lean();
 
   const requesterIds = [...new Set(items.map((item) => item.requesterId))];
-  const requesters = await UserModel.find({ id: { $in: requesterIds } }).lean();
+  const requesters = await findPublicUsersByIds(requesterIds);
   const requesterMap = new Map(requesters.map((u) => [u.id, toUserProfile(u)]));
 
   return items.map((doc) => ({
@@ -110,6 +113,7 @@ export async function findReferrersAtCompany(company: string, excludeUserId?: nu
   const filter: Record<string, unknown> = {
     memberType: "alumni",
     company: { $regex: new RegExp(`^${escapeRegex(company.trim())}$`, "i") },
+    ...publiclyVisibleUserFilter,
   };
   if (excludeUserId != null) {
     filter.id = { $ne: excludeUserId };

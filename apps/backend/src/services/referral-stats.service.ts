@@ -1,7 +1,7 @@
 import type { ReferralStatus } from "../lib/rewards";
 import { STATUS_LABELS } from "../lib/rewards";
 import { referralStatsRepository } from "../repositories/referral-stats.repository";
-import { UserModel } from "@workspace/db";
+import { findPublicUserById } from "../lib/public-user";
 
 const LeaderboardQuerySchema = {
   parse(query: Record<string, unknown>) {
@@ -16,7 +16,7 @@ const LeaderboardQuerySchema = {
 
 export const referralStatsService = {
   async getUserReferralStats(userId: number) {
-    const user = await UserModel.findOne({ id: userId }).lean();
+    const user = await findPublicUserById(userId);
     if (!user) throw new Error("User not found");
     if (user.memberType !== "alumni") {
       throw new Error("Referral stats are only available for alumni");

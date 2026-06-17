@@ -7,12 +7,12 @@ import {
   getNextSequence,
   toPost,
   toPostComment,
-  toUserProfile,
+  publiclyVisibleUserFilter,
   type PostDoc,
   type PostCommentDoc,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth";
-import { savePostMedia } from "../lib/uploads";
+import { findPublicUserById, toPublicUserProfile } from "../lib/public-user";
 import { notifyPostComment, notifyPostLike } from "../services/notification-triggers";
 
 const router: IRouter = Router();
@@ -87,15 +87,17 @@ function isAlumni(user: { memberType?: string }) {
 }
 
 async function enrichComment(doc: PostCommentDoc) {
-  const author = await UserModel.findOne({ id: doc.authorId }).lean();
+  const author = await findPublicUserById(doc.authorId);
   return {
     ...toPostComment(doc),
-    author: toUserProfile(author),
+    author: toPublicUserProfile(author),
   };
 }
 
 async function enrichPost(doc: PostDoc, currentUserId?: number, includeComments = true) {
-  const author = await UserModel.findOne({ id: doc.authorId }).lean();
+  const author = await findPublicUserById(doc.authorId);
+  if (!author) return null;
+
   const likedBy = doc.likedByUserIds ?? [];
 
   let comments: Awaited<ReturnType<typeof enrichComment>>[] = [];
@@ -115,7 +117,7 @@ async function enrichPost(doc: PostDoc, currentUserId?: number, includeComments 
     likedByMe: currentUserId ? likedBy.includes(currentUserId) : false,
     commentCount,
     comments,
-    author: toUserProfile(author),
+    author: toPublicUserProfile(author),
   };
 }
 
@@ -129,18 +131,21 @@ router.get("/posts/contributors", requireAuth, async (req, res): Promise<void> =
     { $limit: limit },
   ]);
 
-  const items = await Promise.all(
-    grouped.map(async ({ _id, postCount }) => {
-      const author = await UserModel.findOne({ id: _id }).lean();
-      return {
-        authorId: _id,
-        postCount,
-        author: toUserProfile(author),
-      };
-    }),
-  );
+  const items = (
+    await Promise.all(
+      grouped.map(async ({ _id, postCount }) => {
+        const author = await findPublicUserById(_id);
+        if (!author) return null;
+        return {
+          authorId: _id,
+          postCount,
+          author: toPublicUserProfile(author),
+        };
+      }),
+    )
+  ).filter((item) => item !== null);
 
-  res.json({ items: items.filter((item) => item.author) });
+  res.json({ items });
 });
 
 router.get("/posts", requireAuth, async (req, res): Promise<void> => {
@@ -151,12 +156,19 @@ router.get("/posts", requireAuth, async (req, res): Promise<void> => {
   const limit = Number.isNaN(limitRaw) ? 10 : Math.min(Math.max(limitRaw, 1), 20);
   const skip = (page - 1) * limit;
 
+  const verifiedAuthors = await UserModel.find(publiclyVisibleUserFilter).select("id").lean();
+  const verifiedAuthorIds = verifiedAuthors.map((u) => u.id);
+  const postFilter =
+    verifiedAuthorIds.length > 0 ? { authorId: { $in: verifiedAuthorIds } } : { authorId: -1 };
+
   const [total, posts] = await Promise.all([
-    PostModel.countDocuments(),
-    PostModel.find().sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    PostModel.countDocuments(postFilter),
+    PostModel.find(postFilter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
   ]);
 
-  const enriched = await Promise.all(posts.map((p) => enrichPost(p, user.id)));
+  const enriched = (
+    await Promise.all(posts.map((p) => enrichPost(p, user.id)))
+  ).filter((p) => p !== null);
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   res.json({

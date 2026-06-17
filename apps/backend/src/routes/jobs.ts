@@ -6,11 +6,11 @@ import {
   ReferralModel,
   getNextSequence,
   toJob,
-  toUserProfile,
   toReferral,
   type JobDoc,
   type ReferralDoc,
 } from "@workspace/db";
+import { findPublicUserById, toPublicUserProfile } from "../lib/public-user";
 import { optionalAuth, requireAuth } from "../middlewares/auth";
 import {
   CreateJobBody,
@@ -39,7 +39,8 @@ async function enrichJob(
   currentUserId?: number,
   referralByJobId?: Map<number, ReferralDoc>,
 ) {
-  const poster = await UserModel.findOne({ id: job.posterId }).lean();
+  const poster = await findPublicUserById(job.posterId);
+  if (!poster) return null;
 
   let isSaved = false;
   const isOwnJob = currentUserId ? job.posterId === currentUserId : false;
@@ -56,7 +57,7 @@ async function enrichJob(
 
   return {
     ...toJob(job),
-    poster: toUserProfile(poster),
+    poster: toPublicUserProfile(poster),
     isSaved,
     referralCount,
     isOwnJob,
@@ -103,7 +104,9 @@ router.get("/jobs", async (req, res): Promise<void> => {
     referralByJobId = new Map(refs.map((r) => [r.jobId, r]));
   }
 
-  const enriched = await Promise.all(jobs.map((j) => enrichJob(j, userId, referralByJobId)));
+  const enriched = (
+    await Promise.all(jobs.map((j) => enrichJob(j, userId, referralByJobId)))
+  ).filter((j) => j !== null);
   res.json(enriched);
 });
 
@@ -211,7 +214,12 @@ router.get("/jobs/:jobId", async (req, res): Promise<void> => {
     const ref = await ReferralModel.findOne({ requesterId: userId, jobId: id }).lean();
     if (ref) referralByJobId.set(id, ref);
   }
-  res.json(await enrichJob(job, userId, referralByJobId));
+  const enriched = await enrichJob(job, userId, referralByJobId);
+  if (!enriched) {
+    res.status(404).json({ error: "Job not found" });
+    return;
+  }
+  res.json(enriched);
 });
 
 router.patch("/jobs/:jobId", requireAuth, async (req, res): Promise<void> => {
