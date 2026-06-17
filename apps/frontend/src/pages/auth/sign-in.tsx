@@ -5,6 +5,7 @@ import { HttpError } from "@/lib/http-client";
 import { AuthSplitLayout } from "@/components/auth/auth-split-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { BRAND } from "@/lib/brand";
 
@@ -89,9 +90,8 @@ export default function SignInPage() {
 
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

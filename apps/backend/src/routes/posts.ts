@@ -14,6 +14,7 @@ import {
 import { requireAuth } from "../middlewares/auth";
 import { findPublicUserById, toPublicUserProfile } from "../lib/public-user";
 import { notifyPostComment, notifyPostLike } from "../services/notification-triggers";
+import { savePostMedia } from "../lib/uploads";
 
 const router: IRouter = Router();
 
@@ -81,10 +82,6 @@ const UploadMediaBody = z.object({
 const CreateCommentBody = z.object({
   content: z.string().min(1, "Comment cannot be empty").max(1000),
 });
-
-function isAlumni(user: { memberType?: string }) {
-  return user.memberType === "alumni";
-}
 
 async function enrichComment(doc: PostCommentDoc) {
   const author = await findPublicUserById(doc.authorId);
@@ -181,12 +178,7 @@ router.get("/posts", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.post("/posts", requireAuth, async (req, res): Promise<void> => {
-  const user = (req as { currentUser: { id: number; memberType?: string } }).currentUser;
-
-  if (!isAlumni(user)) {
-    res.status(403).json({ error: "Only alumni can create posts." });
-    return;
-  }
+  const user = (req as { currentUser: { id: number } }).currentUser;
 
   const parsed = CreatePostBody.safeParse(req.body);
   if (!parsed.success) {
@@ -212,13 +204,6 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.post("/posts/media", requireAuth, async (req, res): Promise<void> => {
-  const user = (req as { currentUser: { memberType?: string } }).currentUser;
-
-  if (!isAlumni(user)) {
-    res.status(403).json({ error: "Only alumni can upload media." });
-    return;
-  }
-
   const parsed = UploadMediaBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid upload" });

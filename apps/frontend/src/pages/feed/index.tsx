@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
 import { feedApi, FEED_QUERY_KEYS, FEED_PAGE_SIZE, type FeedListResponse } from "@/lib/feed-api";
-import { isAlumniMember } from "@/lib/user-utils";
 import { ChevronLeft, ChevronRight, Rss } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -83,7 +82,6 @@ export default function FeedPage() {
   const { data: me } = useGetMe();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const canPost = isAlumniMember(me);
   const [page, setPage] = useState(1);
 
   const { data, isLoading, isFetching } = useQuery({
@@ -146,7 +144,7 @@ export default function FeedPage() {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_272px] gap-4 w-full">
       <div className="min-w-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-        {me && canPost && (
+        {me && (
           <FeedComposer
             user={me}
             embedded
@@ -199,9 +197,9 @@ export default function FeedPage() {
             </div>
             <p className="font-medium text-sm">Your feed is empty</p>
             <p className="text-xs text-muted-foreground mt-1.5 max-w-xs mx-auto">
-              {canPost
-                ? "Share the first post with your community."
-                : "Posts from alumni and mentors will show up here."}
+              {me
+                ? "Share the first post with your community — students and alumni can post here."
+                : "Sign in to post and see updates from your network."}
             </p>
           </div>
         )}

@@ -4,6 +4,7 @@ import { useAuth, type SignUpPayload } from "@/lib/auth";
 import { AuthSplitLayout } from "@/components/auth/auth-split-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { BRAND } from "@/lib/brand";
@@ -123,9 +124,8 @@ export default function SignUpPage() {
 
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             placeholder="At least 6 characters"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -139,7 +139,7 @@ export default function SignUpPage() {
         <div className="space-y-3 rounded-xl border bg-card p-4">
           <Label>Are you a Student or Alumni?</Label>
           <p className="text-xs text-muted-foreground">
-            Alumni can post on the community feed and share job openings. Students can browse and engage.
+            Students and alumni can post on the community feed. Alumni can also publish formal job listings.
           </p>
           <RadioGroup
             value={memberType}
