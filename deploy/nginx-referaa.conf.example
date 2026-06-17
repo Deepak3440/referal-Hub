@@ -3,11 +3,16 @@
 # Problem: if HTTPS has "auth_basic" (password protection), email verify links return
 # 401 Unauthorized. Verification must be PUBLIC (no login).
 #
+# Uploads: default nginx body limit is 1m — profile photos (base64 JSON) need more.
+# Set client_max_body_size to match Express (30mb in apps/backend/src/app.ts).
+#
 # Copy/adapt into your server block, then: sudo nginx -t && sudo systemctl reload nginx
 
 server {
     listen 80;
     server_name 103.21.187.238;
+
+    client_max_body_size 30m;
 
     # Optional: keep HTTP for verify only; redirect everything else to HTTPS
     location = /api/auth/verify-email {
@@ -41,6 +46,8 @@ server {
 server {
     listen 443 ssl;
     server_name 103.21.187.238;
+
+    client_max_body_size 30m;
 
     # ssl_certificate ...;
     # ssl_certificate_key ...;

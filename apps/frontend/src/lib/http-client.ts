@@ -32,6 +32,12 @@ function toMessage(err: ApiError): string {
 
 function toHttpError(err: unknown): HttpError {
   if (err instanceof ApiError) {
+    if (err.status === 413) {
+      return new HttpError(
+        "Photo upload is too large for the server. Try a smaller image (under 2 MB), or ask your admin to increase the nginx upload limit.",
+        err.status,
+      );
+    }
     const data = err.data as
       | { error?: string; message?: string; code?: string; email?: string }
       | null;
