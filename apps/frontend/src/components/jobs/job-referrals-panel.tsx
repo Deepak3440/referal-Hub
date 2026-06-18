@@ -55,8 +55,11 @@ export function JobReferralsPanel({
   const [filterInitialized, setFilterInitialized] = useState(false);
 
   const { data: me } = useGetMe();
-  const { data, isLoading } = useListJobReferrals(jobId, {
-    query: { queryKey: getListJobReferralsQueryKey(jobId) },
+  const { data, isLoading, isError, refetch } = useListJobReferrals(jobId, {
+    query: {
+      queryKey: getListJobReferralsQueryKey(jobId),
+      enabled: open && jobId > 0,
+    },
   });
   const updateReferral = useUpdateReferral();
   const queryClient = useQueryClient();
@@ -162,6 +165,18 @@ export function JobReferralsPanel({
         <div className="mt-3 space-y-3">
           {isLoading ? (
             <Skeleton className="h-32 w-full rounded-xl" />
+          ) : isError ? (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 text-center py-8 px-4 space-y-3">
+              <p className="text-sm text-destructive font-medium">Could not load referral requests</p>
+              <p className="text-xs text-muted-foreground">
+                {requestCount > 0
+                  ? `${requestCount} request${requestCount !== 1 ? "s" : ""} recorded — try again.`
+                  : "Please try again."}
+              </p>
+              <Button variant="outline" size="sm" onClick={() => void refetch()}>
+                Retry
+              </Button>
+            </div>
           ) : referrals.length === 0 ? (
             <div className="rounded-xl border border-dashed bg-muted/20 text-center py-8 px-4">
               <Inbox className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />

@@ -3,6 +3,11 @@
 Alumni refer, mentor & connect — React frontend + Express backend.  
 **Domain:** [referaa.com](https://referaa.com)
 
+## Documentation
+
+- **[Product flows & screens](docs/PRODUCT-FLOWS.md)** — what each tab shows, stats, job vs company referrals (for PM / QA / team)
+- [Backend API & data model](apps/backend/README.md)
+
 ## Project structure
 
 ```

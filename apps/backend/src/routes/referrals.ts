@@ -26,6 +26,7 @@ import {
 } from "../services/notification-triggers";
 import { referralAlreadyExistsMessage } from "../lib/referral-request";
 import { findPublicUserById, toPublicUserProfile } from "../lib/public-user";
+import { assertRequesterCanSendReferral } from "../services/referralPointsGuard";
 
 const router: IRouter = Router();
 

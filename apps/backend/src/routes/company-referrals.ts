@@ -6,7 +6,10 @@ import {
   listCompanyReferrers,
   listCompanyReferralRequestsForRequester,
   listCompanyReferralRequestsForReferrer,
+  updateCompanyReferralStatus,
 } from "../services/company-referral";
+import { ReferralRewardError } from "../services/referralRewards";
+import type { ReferralStatus } from "../lib/rewards";
 
 const router: IRouter = Router();
 
@@ -91,9 +94,79 @@ router.post("/company-referral-requests", requireAuth, async (req, res): Promise
     });
     res.status(201).json(created);
   } catch (err) {
+    if (err instanceof ReferralRewardError) {
+      res.status(err.statusCode).json({ error: err.message });
+      return;
+    }
     const statusCode = (err as Error & { statusCode?: number }).statusCode ?? 500;
     res.status(statusCode).json({
       error: err instanceof Error ? err.message : "Failed to send company referral request",
+    });
+  }
+});
+
+router.patch("/company-referral-requests/:id/status", requireAuth, async (req, res): Promise<void> => {
+  const user = (req as { currentUser: { id: number } }).currentUser;
+  const requestId = parseInt(String(req.params.id), 10);
+  const nextStatus = req.body?.status as ReferralStatus | undefined;
+
+  if (Number.isNaN(requestId)) {
+    res.status(400).json({ error: "Invalid request id" });
+    return;
+  }
+  if (!nextStatus || typeof nextStatus !== "string") {
+    res.status(400).json({ error: "status is required" });
+    return;
+  }
+
+  try {
+    const updated = await updateCompanyReferralStatus({
+      requestId,
+      referrerId: user.id,
+      nextStatus,
+    });
+    res.json(updated);
+  } catch (err) {
+    if (err instanceof ReferralRewardError) {
+      res.status(err.statusCode).json({ error: err.message });
+      return;
+    }
+    const statusCode = (err as Error & { statusCode?: number }).statusCode ?? 500;
+    res.status(statusCode).json({
+      error: err instanceof Error ? err.message : "Failed to update company referral request",
+    });
+  }
+});
+
+router.patch("/company-referral-requests/:id/respond", requireAuth, async (req, res): Promise<void> => {
+  const user = (req as { currentUser: { id: number } }).currentUser;
+  const requestId = parseInt(String(req.params.id), 10);
+  const action = req.body?.action;
+
+  if (Number.isNaN(requestId)) {
+    res.status(400).json({ error: "Invalid request id" });
+    return;
+  }
+  if (action !== "accept" && action !== "reject") {
+    res.status(400).json({ error: 'action must be "accept" or "reject"' });
+    return;
+  }
+
+  try {
+    const updated = await updateCompanyReferralStatus({
+      requestId,
+      referrerId: user.id,
+      nextStatus: action === "accept" ? "accepted" : "rejected",
+    });
+    res.json(updated);
+  } catch (err) {
+    if (err instanceof ReferralRewardError) {
+      res.status(err.statusCode).json({ error: err.message });
+      return;
+    }
+    const statusCode = (err as Error & { statusCode?: number }).statusCode ?? 500;
+    res.status(statusCode).json({
+      error: err instanceof Error ? err.message : "Failed to update company referral request",
     });
   }
 });

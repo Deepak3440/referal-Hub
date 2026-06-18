@@ -3,17 +3,23 @@ import { useListReferrals, getListReferralsQueryKey } from "@workspace/api-clien
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatDistanceToNow } from "date-fns";
-import { Link } from "wouter";
-import { User, Briefcase } from "lucide-react";
-import { ReferralStatusBadge } from "@/components/referrals/referral-status-badge";
-import { ReferralProgressBar } from "@/components/referrals/referral-progress-bar";
-import { ReferralRequestNotice } from "@/components/referrals/referral-request-actions";
+import { Link, useLocation } from "wouter";
+import {
+  Briefcase,
+  Building2,
+  CheckCircle2,
+  Clock,
+  ListChecks,
+  TrendingUp,
+} from "lucide-react";
 import { CompanyReferralRequestCard } from "@/components/referrals/company-referral-request-card";
-import { canSendReferralRequest } from "@/lib/referral";
+import { JobReferralRequestCard } from "@/components/referrals/job-referral-request-card";
 import { useSyncPoints } from "@/hooks/use-sync-points";
 import { PageHeader, DashboardCard } from "@/components/layout/page-header";
+import { StatCard } from "@/components/layout/stat-card";
 import { companyReferralApi, COMPANY_REFERRAL_QUERY_KEYS } from "@/lib/company-referral-api";
+import type { CompanyReferralRequestResult } from "@/lib/company-referral-api";
+import { DEMO_COMPANY_REFERRALS, DEMO_JOB_REFERRALS } from "@/lib/referrals-track-demo";
 
 const ACTIVE_STATUSES = new Set([
   "accepted",
@@ -23,51 +29,155 @@ const ACTIVE_STATUSES = new Set([
   "rejected_after_interview",
 ]);
 
+function companyWorkflowStatus(request: CompanyReferralRequestResult): string {
+  if (request.workflowStatus) return request.workflowStatus;
+  if (request.acceptedByReferrerId) return "accepted";
+  if (request.status === "declined" || request.status === "closed") return "rejected";
+  return request.status;
+}
+
+function isCompanyPending(request: CompanyReferralRequestResult): boolean {
+  return companyWorkflowStatus(request) === "pending" && !request.acceptedByReferrerId;
+}
+
 /** Referral requests you sent — job-wise and company-wise */
 export default function Referrals() {
+  const [location, setLocation] = useLocation();
   const syncPoints = useSyncPoints();
+  const demoPreview = useMemo(() => {
+    const qs = location.includes("?") ? location.slice(location.indexOf("?")) : "";
+    return new URLSearchParams(qs).get("demo") === "1";
+  }, [location]);
+
   const { data: myRequests, isLoading: jobsLoading } = useListReferrals(
     { role: "requester" },
-    { query: { queryKey: getListReferralsQueryKey({ role: "requester" }) } },
+    {
+      query: {
+        queryKey: getListReferralsQueryKey({ role: "requester" }),
+        enabled: !demoPreview,
+      },
+    },
   );
 
   const { data: companyRequests, isLoading: companyLoading } = useQuery({
     queryKey: COMPANY_REFERRAL_QUERY_KEYS.mine,
     queryFn: () => companyReferralApi.listMine(),
+    enabled: !demoPreview,
   });
 
-  const isLoading = jobsLoading || companyLoading;
-  const jobItems = myRequests ?? [];
-  const companyItems = companyRequests?.items ?? [];
+  const isLoading = !demoPreview && (jobsLoading || companyLoading);
+  const jobItems = demoPreview ? DEMO_JOB_REFERRALS : (myRequests ?? []);
+  const companyItems = demoPreview ? DEMO_COMPANY_REFERRALS : (companyRequests?.items ?? []);
 
   const stats = useMemo(() => {
+    const jobPending = jobItems.filter((r) => r.status === "pending").length;
+    const companyPending = companyItems.filter(isCompanyPending).length;
+    const jobInProgress = jobItems.filter((r) => ACTIVE_STATUSES.has(r.status)).length;
+    const companyInProgress = companyItems.filter((r) => {
+      const s = companyWorkflowStatus(r);
+      return ACTIVE_STATUSES.has(s);
+    }).length;
+    const hired =
+      jobItems.filter((r) => r.status === "hired").length +
+      companyItems.filter((r) => companyWorkflowStatus(r) === "hired").length;
+
     return {
       total: jobItems.length + companyItems.length,
-      pending:
-        jobItems.filter((r) => r.status === "pending").length +
-        companyItems.filter((r) => r.status === "pending").length,
-      inProgress: jobItems.filter((r) => ACTIVE_STATUSES.has(r.status)).length,
+      pending: jobPending + companyPending,
+      inProgress: jobInProgress + companyInProgress,
+      hired,
       company: companyItems.length,
       jobs: jobItems.length,
     };
   }, [jobItems, companyItems]);
 
   useEffect(() => {
-    void syncPoints();
-  }, []);
+    if (!demoPreview) void syncPoints();
+  }, [demoPreview]);
 
-  const pageDescription = isLoading
-    ? "Loading requests you sent…"
-    : stats.total === 0
-      ? "When you ask alumni to refer you — for a specific job or an entire company — every request appears here."
-      : `${stats.total} request${stats.total !== 1 ? "s" : ""} · ${stats.jobs} job · ${stats.company} company · ${stats.pending} pending`;
+  const toggleDemo = () => {
+    if (demoPreview) {
+      setLocation("/referrals");
+    } else {
+      setLocation("/referrals?demo=1");
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <PageHeader description={pageDescription} />
+      <PageHeader
+        description={
+          isLoading
+            ? "Loading requests you sent…"
+            : demoPreview
+              ? "Sample preview — 2 company + 2 job requests."
+              : stats.total === 0
+                ? "When you ask alumni to refer you, every request appears here."
+                : "Follow progress, read updates, and chat with alumni."
+        }
+      />
+
+      {!isLoading && stats.total > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatCard
+            label="Total requests"
+            value={stats.total}
+            icon={ListChecks}
+            sublabel={`${stats.jobs} job · ${stats.company} company`}
+          />
+          <StatCard
+            label="Pending"
+            value={stats.pending}
+            icon={Clock}
+            highlight={stats.pending > 0}
+            sublabel={stats.pending > 0 ? "Waiting for alumni" : "None waiting"}
+          />
+          <StatCard
+            label="In progress"
+            value={stats.inProgress}
+            icon={TrendingUp}
+            highlight={stats.inProgress > 0}
+            sublabel="Accepted → interview"
+          />
+          <StatCard
+            label="Hired"
+            value={stats.hired}
+            icon={CheckCircle2}
+            highlight={stats.hired > 0}
+            sublabel={stats.hired > 0 ? "Congratulations!" : "Not yet"}
+          />
+        </div>
+      )}
+
+      {demoPreview && (
+        <DashboardCard className="px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-dashed border-primary/30 bg-primary/5">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Preview mode</span> — sample cards only.
+          </p>
+          <Button variant="outline" size="sm" onClick={toggleDemo}>
+            Exit preview
+          </Button>
+        </DashboardCard>
+      )}
+
+      {!demoPreview && !isLoading && (
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1.5" asChild>
+            <Link href="/home">
+              <Briefcase className="h-3.5 w-3.5" />
+              Find more openings
+            </Link>
+          </Button>
+          <Button variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1.5" onClick={toggleDemo}>
+            <Building2 className="h-3.5 w-3.5" />
+            Preview samples
+          </Button>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex flex-col gap-4">
+          <Skeleton className="h-20 w-full rounded-xl" />
           <Skeleton className="h-28 w-full rounded-xl" />
           <Skeleton className="h-28 w-full rounded-xl" />
         </div>
@@ -78,50 +188,27 @@ export default function Referrals() {
             On Dashboard, use <strong>Companies</strong> for a company-wide request or <strong>Jobs</strong> for a
             specific opening. Track everything here.
           </p>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/home">Go to Dashboard</Link>
-          </Button>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/home">Go to Dashboard</Link>
+            </Button>
+            <Button variant="secondary" size="sm" onClick={toggleDemo}>
+              Preview sample cards
+            </Button>
+          </div>
         </DashboardCard>
       ) : (
         <div className="flex flex-col gap-4">
           {companyItems.map((request) => (
-            <CompanyReferralRequestCard key={`company-${request.id}`} request={request} />
+            <CompanyReferralRequestCard
+              key={`company-${request.id}`}
+              request={request}
+              showChat={!demoPreview}
+            />
           ))}
 
           {jobItems.map((ref) => (
-            <Link key={ref.id} href={`/jobs/${ref.jobId}`} className="block">
-              <DashboardCard className="p-4 sm:p-5 space-y-3.5 hover:border-primary/25 hover:shadow-md transition-all cursor-pointer">
-                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
-                  <div className="space-y-1.5 min-w-0 flex-1">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Job request you sent
-                    </p>
-                    <div className="flex items-start gap-2 min-w-0">
-                      <Briefcase className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                      <span className="font-semibold min-w-0 line-clamp-2 break-words">
-                        {ref.job?.title} · {ref.job?.company}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
-                      <User className="w-3 h-3 shrink-0" />
-                      Requested referral from {ref.referrer?.fullName}
-                      <span className="mx-1">·</span>
-                      {formatDistanceToNow(new Date(ref.createdAt), { addSuffix: true })}
-                    </p>
-                  </div>
-                  <ReferralStatusBadge status={ref.status} soft className="self-start sm:self-center shrink-0" />
-                </div>
-                <ReferralProgressBar status={ref.status} showSteps={false} colored />
-                {!canSendReferralRequest(ref.status) && (
-                  <ReferralRequestNotice status={ref.status} />
-                )}
-                {(ref.totalPointsDeducted ?? 0) > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    −{ref.totalPointsDeducted} pts paid by you
-                  </p>
-                )}
-              </DashboardCard>
-            </Link>
+            <JobReferralRequestCard key={ref.id} referral={ref} showChat={!demoPreview} />
           ))}
         </div>
       )}

@@ -7,6 +7,7 @@ import {
   getNextSequence,
   toJob,
   toReferral,
+  toUserProfile,
   type JobDoc,
   type ReferralDoc,
 } from "@workspace/db";
@@ -107,7 +108,13 @@ router.get("/jobs", async (req, res): Promise<void> => {
   const enriched = (
     await Promise.all(jobs.map((j) => enrichJob(j, userId, referralByJobId)))
   ).filter((j) => j !== null);
-  res.json(enriched);
+
+  const visible =
+    scope === "community" && userId
+      ? enriched.filter((j) => j.posterId !== userId)
+      : enriched;
+
+  res.json(visible);
 });
 
 router.post("/jobs", requireAuth, async (req, res): Promise<void> => {

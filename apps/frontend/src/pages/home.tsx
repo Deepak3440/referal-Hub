@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useListJobs, getListJobsQueryKey, useGetDashboardStats, useGetMe } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, Link } from "wouter";
@@ -87,13 +87,20 @@ export default function Home() {
           company: searchCompany || undefined,
           scope: "community",
         }),
+        enabled: Boolean(me),
       },
     },
+  );
+
+  const communityJobs = useMemo(
+    () => (jobs ?? []).filter((job) => !job.isOwnJob),
+    [jobs],
   );
 
   const { data: companyReferrers } = useQuery({
     queryKey: ["companies", "referrers", ""],
     queryFn: () => companyReferralApi.listCompanies(),
+    enabled: Boolean(me),
   });
 
   const firstName = me?.fullName?.split(" ")[0] ?? "there";
@@ -194,8 +201,8 @@ export default function Home() {
             <h3 className="font-semibold text-sm sm:text-base">Request a referral</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               {referralTab === "companies"
-                ? `${companyReferrers?.total ?? 0} companies in your network have verified alumni referrers.`
-                : "Browse specific job openings and request a referral from the poster."}
+                ? `${companyReferrers?.total ?? 0} companies where other alumni can refer you — not your own company.`
+                : "Browse job openings posted by others and request a referral."}
             </p>
           </div>
 
@@ -230,9 +237,9 @@ export default function Home() {
             >
               <Briefcase className="h-3.5 w-3.5" />
               Jobs
-              {!isLoading && (jobs?.length ?? 0) > 0 && (
+              {!isLoading && communityJobs.length > 0 && (
                 <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-normal">
-                  {jobs?.length}
+                  {communityJobs.length}
                 </Badge>
               )}
             </button>
@@ -277,10 +284,10 @@ export default function Home() {
               <div className="space-y-4">
                 <div>
                   <h4 className="font-semibold text-sm">
-                    {isLoading ? "Loading jobs..." : `${jobs?.length ?? 0} jobs found`}
+                    {isLoading ? "Loading jobs..." : `${communityJobs.length} jobs found`}
                   </h4>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Referral-backed openings from the community
+                    Openings posted by other alumni — not your own listings
                   </p>
                 </div>
 
@@ -290,9 +297,9 @@ export default function Home() {
                       <Skeleton key={i} className="h-[160px] rounded-xl" />
                     ))}
                   </div>
-                ) : jobs && jobs.length > 0 ? (
+                ) : communityJobs.length > 0 ? (
                   <div className="space-y-3">
-                    {jobs.map((job) => (
+                    {communityJobs.map((job) => (
                       <JobListCard key={job.id} job={job} />
                     ))}
                   </div>

@@ -49,6 +49,7 @@ import { isAlumniMember } from "@/lib/user-utils";
 import { useQuery } from "@tanstack/react-query";
 import { CompanyReferralsPanel } from "@/components/referrals/incoming-company-referrals";
 import { companyReferralApi, COMPANY_REFERRAL_QUERY_KEYS } from "@/lib/company-referral-api";
+import { StatCard } from "@/components/layout/stat-card";
 import { cn } from "@/lib/utils";
 import {
   JOB_WORK_TYPE_OPTIONS,
@@ -94,44 +95,6 @@ const jobSchema = z
 
 type JobFormValues = z.infer<typeof jobSchema>;
 
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  highlight,
-  loading,
-}: {
-  label: string;
-  value: number | string;
-  icon: React.ComponentType<{ className?: string }>;
-  highlight?: boolean;
-  loading?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "rounded-xl border bg-card p-4 flex items-center gap-3 transition-colors",
-        highlight && "border-primary/25 bg-primary/5",
-      )}
-    >
-      <div
-        className={cn(
-          "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
-          highlight ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
-        )}
-      >
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xs text-muted-foreground truncate">{label}</p>
-        <p className={cn("text-xl font-bold tabular-nums", highlight && "text-primary")}>
-          {loading ? "–" : value}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-3">
@@ -160,7 +123,7 @@ export default function MyListings() {
     enabled: Boolean(me),
   });
   const companyPending =
-    companyIncoming?.items.filter((r) => r.status === "pending").length ?? 0;
+    companyIncoming?.items.filter((r) => r.referrerStatus === "pending").length ?? 0;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const createJob = useCreateJob();
   const { toast } = useToast();

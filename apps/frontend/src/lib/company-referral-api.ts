@@ -1,5 +1,6 @@
 import { httpRequest } from "@/lib/http-client";
 import type { UserProfile } from "@workspace/api-client-react";
+import type { ReferralStatus } from "@/lib/referral";
 
 export type CompanyReferrerRow = {
   company: string;
@@ -16,6 +17,12 @@ export type CompanyReferralRequestInput = {
   resumeUrl?: string | null;
 };
 
+export type CompanyReferrerViewStatus =
+  | "pending"
+  | "personal_rejected"
+  | "already_referred"
+  | ReferralStatus;
+
 export type CompanyReferralRequestResult = {
   id: number;
   requesterId: number;
@@ -26,12 +33,20 @@ export type CompanyReferralRequestResult = {
   resumeUrl: string | null;
   referrerCount: number;
   referrerIds?: number[];
+  acceptedByReferrerId?: number | null;
+  rejectedReferrerIds?: number[];
   status: string;
   createdAt: string;
+  pendingReferrerCount?: number;
+  workflowStatus?: ReferralStatus;
+  rewardPoints?: number;
+  rewardStagesApplied?: string[];
+  handlerReferrer?: UserProfile | null;
 };
 
 export type IncomingCompanyReferralRequest = CompanyReferralRequestResult & {
   requester: UserProfile | null;
+  referrerStatus: CompanyReferrerViewStatus;
 };
 
 export const COMPANY_REFERRAL_QUERY_KEYS = {
@@ -72,4 +87,24 @@ export const companyReferralApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     }),
+
+  respond: (requestId: number, action: "accept" | "reject") =>
+    httpRequest<IncomingCompanyReferralRequest>(
+      `/company-referral-requests/${requestId}/respond`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      },
+    ),
+
+  updateStatus: (requestId: number, status: ReferralStatus) =>
+    httpRequest<IncomingCompanyReferralRequest>(
+      `/company-referral-requests/${requestId}/status`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      },
+    ),
 };

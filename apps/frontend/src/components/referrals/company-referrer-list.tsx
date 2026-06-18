@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useGetMe } from "@workspace/api-client-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +13,7 @@ import { ArrowRight, Building2, Search, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function CompanyReferrerList() {
+  const { data: me } = useGetMe();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selected, setSelected] = useState<CompanyReferrerRow | null>(null);
@@ -20,6 +22,7 @@ export function CompanyReferrerList() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["companies", "referrers", debouncedSearch],
     queryFn: () => companyReferralApi.listCompanies(debouncedSearch || undefined),
+    enabled: Boolean(me),
   });
 
   const companies = data?.items ?? [];

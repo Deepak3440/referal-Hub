@@ -133,7 +133,7 @@ export function OfferOpeningCard({ job }: { job: Job }) {
           jobTitle={job.title}
           jobRewardPoints={job.rewardPoints}
           requestCount={job.referralCount}
-          defaultOpen={hasRequests}
+          defaultOpen={false}
           embedded
         />
       </div>
