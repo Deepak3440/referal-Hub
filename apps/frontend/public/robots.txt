@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://referaa.com/sitemap.xml
