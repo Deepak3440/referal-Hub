@@ -4,9 +4,10 @@ export const BRAND = {
   /** Short — sidebar, badges (feed + mentorship + referrals) */
   tagline: "Refer · Mentor · Connect",
   domain: "referaa.com",
-  /** Longer — landing, meta, auth panels */
+  /** SEO + marketing copy — landing, meta, auth panels */
+  seoTitle: "Referaa - Employee Referral & Career Mentorship Platform",
   description:
-    "Alumni refer talent, mentor students 1:1, and share on the feed. Students request referrals and track every step.",
+    "Get employee referrals from professionals and alumni, connect with mentors, track referral requests, and accelerate your career with Referaa.",
   logoLetter: "R",
   colors: {
     primary: "#157E9A",

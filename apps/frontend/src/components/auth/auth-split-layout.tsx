@@ -34,7 +34,7 @@ export function AuthSplitLayout({
               Referrals, mentorship & community
             </h2>
             <p className="text-primary-foreground/85 text-lg leading-relaxed">
-              Alumni post openings, guide students 1:1, and share on the feed. Students request referrals and track every step.
+              {BRAND.description}
             </p>
           </div>
 
