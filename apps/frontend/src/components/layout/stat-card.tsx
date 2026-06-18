@@ -7,6 +7,8 @@ export function StatCard({
   highlight,
   loading,
   sublabel,
+  active,
+  onClick,
 }: {
   label: string;
   value: number | string;
@@ -14,12 +16,31 @@ export function StatCard({
   highlight?: boolean;
   loading?: boolean;
   sublabel?: string;
+  active?: boolean;
+  onClick?: () => void;
 }) {
+  const interactive = Boolean(onClick);
+
   return (
     <div
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={
+        interactive
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick?.();
+              }
+            }
+          : undefined
+      }
       className={cn(
         "rounded-xl border bg-card p-4 flex items-center gap-3 transition-colors",
         highlight && "border-primary/25 bg-primary/5",
+        active && "border-primary ring-2 ring-primary/20 bg-primary/5",
+        interactive && "cursor-pointer hover:border-primary/40 hover:bg-primary/5",
       )}
     >
       <div

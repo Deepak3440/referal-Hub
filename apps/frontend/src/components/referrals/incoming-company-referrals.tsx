@@ -20,6 +20,7 @@ import { resolveUploadUrl } from "@/lib/upload-url";
 import { avatarBgClass } from "@/lib/avatar-colors";
 import { type ReferralStatus } from "@/lib/referral";
 import { useToast } from "@/hooks/use-toast";
+import { REFERRAL_STATS_QUERY_KEYS } from "@/lib/referral-stats-api";
 import { cn } from "@/lib/utils";
 
 const TERMINAL: ReferralStatus[] = ["hired", "rejected", "rejected_after_interview"];
@@ -244,6 +245,9 @@ export function CompanyReferralsPanel({ currentUserId }: { currentUserId: number
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: COMPANY_REFERRAL_QUERY_KEYS.incoming });
       queryClient.invalidateQueries({ queryKey: COMPANY_REFERRAL_QUERY_KEYS.mine });
+      queryClient.invalidateQueries({
+        queryKey: REFERRAL_STATS_QUERY_KEYS.user(currentUserId),
+      });
       const labels: Partial<Record<ReferralStatus, string>> = {
         accepted: "Request accepted",
         rejected: "Request declined",

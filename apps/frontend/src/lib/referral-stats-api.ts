@@ -6,6 +6,10 @@ export type ReferralStats = {
   memberType: string;
   referralsGiven: number;
   referralsReceived: number;
+  jobRequestsReceived: number;
+  companyRequestsReceived: number;
+  pending: number;
+  completed: number;
   accepted: number;
   rejected: number;
   referred: number;

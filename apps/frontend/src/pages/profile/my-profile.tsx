@@ -42,6 +42,8 @@ export default function MyProfile() {
     queryKey: REFERRAL_STATS_QUERY_KEYS.user(profile?.id ?? 0),
     queryFn: () => referralStatsApi.getUserStats(profile!.id),
     enabled: isAlumni && !!profile?.id,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const handleSave = (data: ProfileFormValues, photo?: ProfilePhotoSubmit) => {
@@ -211,8 +213,12 @@ export default function MyProfile() {
                 <span className="font-bold">{stats?.totalJobsPosted || 0}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground text-sm">Referrals given</span>
+                <span className="text-muted-foreground text-sm">Requests received</span>
                 <span className="font-bold">{stats?.referralsGiven || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground text-sm">Pending responses</span>
+                <span className="font-bold">{stats?.pendingReferrals || 0}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground text-sm">Successful hires</span>

@@ -30,6 +30,7 @@ import {
 } from "@/lib/referral-points";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { useSyncPoints, type PointsUpdate } from "@/hooks/use-sync-points";
+import { REFERRAL_STATS_QUERY_KEYS } from "@/lib/referral-stats-api";
 import { cn } from "@/lib/utils";
 
 type ReferralWithPoints = Referral & { pointsUpdate?: PointsUpdate };
@@ -97,6 +98,7 @@ export function JobReferralsPanel({
     queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
     queryClient.invalidateQueries({ queryKey: [`/api/jobs/${jobId}`] });
     queryClient.invalidateQueries({ queryKey: ["/api/jobs/my"] });
+    queryClient.invalidateQueries({ queryKey: REFERRAL_STATS_QUERY_KEYS.user(me?.id ?? 0) });
   };
 
   const updateStatus = (referralId: number, status: ReferralStatus) => {

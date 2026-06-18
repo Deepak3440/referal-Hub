@@ -164,7 +164,7 @@ export default function Home() {
         {isAlumni ? (
           <>
             <StatCard
-              label="Referrals given"
+              label="Requests received"
               value={stats?.referralsGiven ?? 0}
               icon={Users}
               loading={statsLoading}

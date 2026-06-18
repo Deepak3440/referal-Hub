@@ -29,16 +29,21 @@ export function ReferralStatsCard({ stats }: { stats: ReferralStats }) {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
         <StatBox label="Requests received" value={stats.referralsGiven} />
-        <StatBox label="Accepted" value={stats.accepted} />
-        <StatBox label="Referred" value={stats.referred} />
-        <StatBox label="Hires" value={stats.hires} />
+        <StatBox label="Pending" value={stats.pending} />
+        <StatBox label="Completed (hired)" value={stats.completed} />
+        <StatBox label="Hire rate" value={stats.hireRate} suffix="%" />
       </div>
 
+      <p className="text-[11px] text-muted-foreground mb-3">
+        {stats.jobRequestsReceived} job · {stats.companyRequestsReceived} company — all time on
+        your openings & company profile
+      </p>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <StatBox label="Rejected" value={stats.rejected} />
+        <StatBox label="Accepted" value={stats.accepted} />
+        <StatBox label="Referred" value={stats.referred} />
         <StatBox label="Interviews" value={stats.interviews} />
-        <StatBox label="Accept rate" value={stats.acceptanceRate} suffix="%" />
-        <StatBox label="Hire rate" value={stats.hireRate} suffix="%" />
+        <StatBox label="Hires" value={stats.hires} />
       </div>
 
       <p className="text-xs text-muted-foreground mt-4 flex items-center gap-1.5">

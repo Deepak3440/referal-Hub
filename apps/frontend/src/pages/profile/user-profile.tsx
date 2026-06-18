@@ -33,6 +33,8 @@ export default function UserProfile() {
     queryKey: REFERRAL_STATS_QUERY_KEYS.user(Number(userId)),
     queryFn: () => referralStatsApi.getUserStats(Number(userId)),
     enabled: !!userId && Number(userId) > 0 && isAlumniMember(profile),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const requestConsult = useMutation({
