@@ -18,4 +18,5 @@ export const BRAND = {
     success: "#22C55E",
     warning: "#F59E0B",
   },
+  supportEmail: "thakurdeep3440@gmail.com",
 } as const;

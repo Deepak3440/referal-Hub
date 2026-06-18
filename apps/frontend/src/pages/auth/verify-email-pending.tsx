@@ -4,7 +4,6 @@ import { Mail } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { AuthSplitLayout } from "@/components/auth/auth-split-layout";
 import { Button } from "@/components/ui/button";
-import { BRAND } from "@/lib/brand";
 
 function getEmailFromSearch(search: string): string {
   const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
@@ -39,7 +38,7 @@ export default function VerifyEmailPendingPage() {
   return (
     <AuthSplitLayout
       title="Check your email"
-      subtitle={`We sent a verification link to activate your ${BRAND.name} account`}
+      subtitle="Open the link we sent to verify your email"
     >
       <div className="space-y-6">
         <div className="rounded-xl border bg-card p-6 text-center space-y-3">
@@ -76,14 +75,14 @@ export default function VerifyEmailPendingPage() {
           <Button
             type="button"
             variant="outline"
-            className="w-full h-11"
+            className="w-full h-11 rounded-full"
             disabled={!email || status === "sending"}
             onClick={() => void handleResend()}
           >
             {status === "sending" ? "Sending..." : "Resend verification email"}
           </Button>
 
-          <Button asChild className="w-full h-11">
+          <Button asChild className="w-full h-11 rounded-full">
             <Link href="/sign-in">Go to sign in</Link>
           </Button>
         </div>

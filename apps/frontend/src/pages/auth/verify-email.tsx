@@ -4,7 +4,6 @@ import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { AuthSplitLayout } from "@/components/auth/auth-split-layout";
 import { Button } from "@/components/ui/button";
-import { BRAND } from "@/lib/brand";
 
 type VerifyState = "loading" | "success" | "error";
 
@@ -58,7 +57,7 @@ export default function VerifyEmailPage() {
   return (
     <AuthSplitLayout
       title="Email verification"
-      subtitle={`Confirm your account on ${BRAND.name}`}
+      subtitle="We're confirming your email address"
     >
       <div className="space-y-6">
         <div className="rounded-xl border bg-card p-6 text-center space-y-3">

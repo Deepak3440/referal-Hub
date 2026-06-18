@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
-import { BRAND } from "@/lib/brand";
 
 function getSearchParams(search: string): URLSearchParams {
   return new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
@@ -62,10 +61,7 @@ export default function SignInPage() {
   }
 
   return (
-    <AuthSplitLayout
-      title="Welcome back"
-      subtitle={`Sign in to continue to ${BRAND.name}`}
-    >
+    <AuthSplitLayout title="Welcome back" subtitle="Sign in to your account">
       <form onSubmit={handleSubmit} className="space-y-5">
         {notice && (
           <p className="text-sm text-success bg-success/10 px-3 py-2 rounded-lg">{notice}</p>
@@ -101,7 +97,7 @@ export default function SignInPage() {
           />
         </div>
 
-        <Button type="submit" className="w-full h-11" disabled={loading}>
+        <Button type="submit" className="w-full h-11 rounded-full" disabled={loading}>
           {loading ? "Signing in..." : "Sign in"}
         </Button>
 

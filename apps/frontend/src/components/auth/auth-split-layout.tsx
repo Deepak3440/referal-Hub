@@ -1,85 +1,66 @@
 import { Link } from "wouter";
-import { Briefcase, Trophy, Users, Video } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function AuthSplitLayout({
   title,
   subtitle,
   children,
+  wide = false,
 }: {
   title: string;
   subtitle: string;
   children: React.ReactNode;
+  /** Wider card for sign-up form */
+  wide?: boolean;
 }) {
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Left — branding panel */}
-      <div className="hidden lg:flex flex-col justify-between bg-primary p-10 xl:p-14 text-primary-foreground relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-white/30" />
-          <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-white/20" />
-        </div>
-
-        <div className="relative z-10">
-          <Link href="/" className="inline-flex items-center gap-3">
-            <BrandLogo className="h-11 w-11" linked={false} />
-            <span className="font-bold text-2xl tracking-tight">{BRAND.name}</span>
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
+        <div className="fade-bar-x absolute inset-x-0 top-0" aria-hidden />
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <Link href="/" className="flex items-center gap-2.5">
+            <BrandLogo className="h-9 w-9" linked={false} />
+            <span className="text-lg font-bold tracking-tight">{BRAND.name}</span>
           </Link>
+          <Button variant="ghost" size="sm" className="rounded-full gap-1.5 text-muted-foreground" asChild>
+            <Link href="/">
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Home
+            </Link>
+          </Button>
         </div>
+      </header>
 
-        <div className="relative z-10 space-y-8 max-w-lg">
-          <div className="space-y-4">
-            <h2 className="text-3xl xl:text-4xl font-bold leading-tight">
-              Referrals, mentorship & community
-            </h2>
-            <p className="text-primary-foreground/85 text-lg leading-relaxed">
-              {BRAND.description}
-            </p>
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-10 sm:py-14">
+        <div
+          className={cn(
+            "w-full landing-fade-up",
+            wide ? "max-w-lg" : "max-w-md",
+          )}
+        >
+          <div className="landing-hover-lift rounded-2xl border border-border/80 bg-card p-6 shadow-sm sm:p-8">
+            <div className="mb-6 space-y-1.5 text-center sm:text-left">
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
+              <p className="text-sm text-muted-foreground">{subtitle}</p>
+            </div>
+            {children}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { icon: Briefcase, label: "Browse jobs", desc: "Find open roles" },
-              { icon: Users, label: "Get referred", desc: "Request referrals" },
-              { icon: Trophy, label: "Earn points", desc: "Reward every step" },
-              { icon: Video, label: "Mentorship", desc: "1:1 consulting" },
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.label}
-                  className="rounded-xl bg-white/10 backdrop-blur p-4 border border-white/10"
-                >
-                  <Icon className="h-5 w-5 mb-2 opacity-90" />
-                  <p className="font-semibold text-sm">{item.label}</p>
-                  <p className="text-xs text-primary-foreground/70 mt-0.5">{item.desc}</p>
-                </div>
-              );
-            })}
-          </div>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            <Link href="/terms" className="hover:text-foreground transition-colors">
+              Terms &amp; Conditions
+            </Link>
+            <span className="mx-2">·</span>
+            <Link href="/contact" className="hover:text-foreground transition-colors">
+              Contact us
+            </Link>
+          </p>
         </div>
-
-        <p className="relative z-10 text-sm text-primary-foreground/60">
-          Join thousands building careers through warm introductions.
-        </p>
-      </div>
-
-      {/* Right — form panel */}
-      <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-14 bg-background">
-        <div className="lg:hidden mb-8 flex items-center gap-2">
-          <BrandLogo className="h-9 w-9" href="/" />
-          <span className="font-bold text-xl">{BRAND.name}</span>
-        </div>
-
-        <div className="w-full max-w-md mx-auto space-y-6">
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{title}</h1>
-            <p className="text-muted-foreground">{subtitle}</p>
-          </div>
-          {children}
-        </div>
-      </div>
+      </main>
     </div>
   );
 }

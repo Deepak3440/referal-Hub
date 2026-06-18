@@ -7,6 +7,8 @@ import type { ReactNode } from "react";
 
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
+import TermsPage from "@/pages/legal/terms";
+import ContactPage from "@/pages/legal/contact";
 import SignInPage from "@/pages/auth/sign-in";
 import SignUpPage from "@/pages/auth/sign-up";
 import VerifyEmailPage from "@/pages/auth/verify-email";
@@ -55,6 +57,8 @@ function Router() {
       <Route path="/sign-up" component={SignUpPage} />
       <Route path="/verify-email" component={VerifyEmailPage} />
       <Route path="/verify-email-pending" component={VerifyEmailPendingPage} />
+      <Route path="/terms" component={TermsPage} />
+      <Route path="/contact" component={ContactPage} />
 
       <Route path="/complete-profile">
         <Redirect to="/home" />

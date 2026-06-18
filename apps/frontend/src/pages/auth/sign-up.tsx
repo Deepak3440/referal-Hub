@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { BRAND } from "@/lib/brand";
 import {
   ProfilePhotoPicker,
   type ProfilePhotoValue,
@@ -80,8 +79,9 @@ export default function SignUpPage() {
 
   return (
     <AuthSplitLayout
+      wide
       title="Create your account"
-      subtitle={`Join ${BRAND.name} and start your referral journey`}
+      subtitle="Join the network — referrals, mentorship, and community"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
@@ -239,9 +239,17 @@ export default function SignUpPage() {
           )}
         </div>
 
-        <Button type="submit" className="w-full h-11" disabled={loading}>
+        <Button type="submit" className="w-full h-11 rounded-full" disabled={loading}>
           {loading ? "Creating account..." : "Sign up"}
         </Button>
+
+        <p className="text-center text-xs text-muted-foreground">
+          By signing up, you agree to our{" "}
+          <Link href="/terms" className="text-primary font-medium hover:underline">
+            Terms &amp; Conditions
+          </Link>
+          .
+        </p>
 
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
