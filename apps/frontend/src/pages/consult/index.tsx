@@ -10,11 +10,11 @@ import { MentorFiltersBar, MentorTabBar } from "@/components/consult/mentor-filt
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Users, CalendarCheck, UserSearch, Video } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Users, UserSearch } from "lucide-react";
 import type { MentorFilters } from "@/lib/mentor-utils";
 import { LeaderboardCard } from "@/components/profile/referral-stats-card";
 import { referralStatsApi, REFERRAL_STATS_QUERY_KEYS } from "@/lib/referral-stats-api";
+import { PageHeader, DashboardCard } from "@/components/layout/page-header";
 
 type Tab = "experts" | "sessions";
 
@@ -107,47 +107,23 @@ export default function ConsultPage() {
   }, [sessions]);
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Mentorship
-            </h1>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-xl">
-              Connect with experienced alumni and grow in your career.
-            </p>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="rounded-xl border border-border/80 bg-card px-4 py-2.5 text-center min-w-[80px] shadow-sm">
-              <p className="text-lg font-bold text-primary">{mentors.length}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Mentors</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setTab("sessions")}
-              className={cn(
-                "rounded-xl border border-border/80 bg-card px-4 py-2.5 text-center min-w-[80px] shadow-sm transition-colors hover:border-primary/30",
-                tab === "sessions" && "border-primary/40 ring-2 ring-primary/15",
-              )}
-            >
-              <p className="text-lg font-bold">{sessions?.length ?? 0}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Sessions</p>
-            </button>
-          </div>
+    <div className="space-y-4">
+      <PageHeader description="Connect with experienced alumni and grow in your career." />
+
+      <DashboardCard className="overflow-hidden">
+        <div className="border-b px-4 py-3">
+          <MentorTabBar
+            tab={tab}
+            onTabChange={setTab}
+            mentorCount={mentors.length}
+            sessionCount={sessions?.length ?? 0}
+            pendingSessions={pendingIncoming}
+          />
         </div>
 
-        <MentorTabBar
-          tab={tab}
-          onTabChange={setTab}
-          mentorCount={mentors.length}
-          pendingSessions={pendingIncoming}
-        />
-      </header>
-
       {tab === "experts" && (
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_260px] gap-6">
-          <div className="space-y-5 min-w-0">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(280px,320px)]">
+          <div className="space-y-4 border-b xl:border-b-0 xl:border-r border-border/60 p-4 sm:p-5 min-w-0">
             <MentorFiltersBar
               filters={filters}
               onChange={setFilters}
@@ -155,22 +131,22 @@ export default function ConsultPage() {
             />
 
             {expertsLoading ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-[220px] rounded-2xl" />
+                  <Skeleton key={i} className="h-[200px] rounded-xl" />
                 ))}
               </div>
             ) : mentors.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {mentors.map((user) => (
                   <MentorListCard key={user.id} user={user} currentUserId={me?.id} />
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-border/80 bg-card text-center py-16 px-6 shadow-sm">
-                <UserSearch className="w-11 h-11 mx-auto text-muted-foreground/40 mb-3" />
-                <p className="font-medium">No mentors match your search</p>
-                <p className="text-sm text-muted-foreground mt-1.5 max-w-sm mx-auto">
+              <div className="rounded-xl border border-dashed bg-muted/10 text-center py-12 px-6">
+                <UserSearch className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
+                <p className="font-medium text-sm">No mentors match your search</p>
+                <p className="text-xs text-muted-foreground mt-1.5 max-w-sm mx-auto">
                   Try clearing filters or check back when more alumni join as consultants.
                 </p>
                 <Button
@@ -185,26 +161,25 @@ export default function ConsultPage() {
             )}
           </div>
 
-          <aside className="space-y-4 xl:sticky xl:top-4 xl:self-start">
-            <LeaderboardCard items={leaderboard?.items ?? []} />
-            <div className="rounded-2xl border border-border/80 bg-card p-5 text-sm text-muted-foreground hidden xl:block shadow-sm">
-              <div className="flex items-center gap-2 text-foreground font-medium mb-2">
-                <Video className="h-4 w-4 text-primary" />
-                How it works
-              </div>
-              <ol className="space-y-2 text-xs list-decimal list-inside">
-                <li>Browse mentors and open their profile</li>
-                <li>Send a session request with a short note</li>
-                <li>Mentor schedules a Google Meet call</li>
-                <li>Join from My Sessions when it&apos;s time</li>
-              </ol>
-            </div>
+          <aside className="space-y-4 p-4 sm:p-5 xl:sticky xl:top-20 xl:self-start min-w-0">
+            <LeaderboardCard embedded items={leaderboard?.items ?? []} title="Top referrers" />
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Book a 1:1 with an alumni mentor. Session updates appear under{" "}
+              <button
+                type="button"
+                className="font-medium text-primary hover:underline"
+                onClick={() => setTab("sessions")}
+              >
+                My sessions
+              </button>
+              .
+            </p>
           </aside>
         </div>
       )}
 
       {tab === "sessions" && (
-        <div className="space-y-4">
+        <div className="space-y-4 p-4 sm:p-5">
           {sessionsLoading ? (
             <Skeleton className="h-48 rounded-xl" />
           ) : sessions && sessions.length > 0 ? (
@@ -236,20 +211,20 @@ export default function ConsultPage() {
               />
             </>
           ) : (
-            <div className="rounded-xl border bg-card text-center py-14 px-6">
-              <CalendarCheck className="w-11 h-11 mx-auto text-muted-foreground/40 mb-3" />
-              <p className="font-medium">No sessions yet</p>
-              <p className="text-sm text-muted-foreground mt-1.5 mb-4">
+            <div className="rounded-xl border border-dashed bg-muted/10 text-center py-12 px-6">
+              <Users className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
+              <p className="font-medium text-sm">No sessions yet</p>
+              <p className="text-xs text-muted-foreground mt-1.5 mb-4">
                 Find a mentor and book your first 1:1 call.
               </p>
               <Button className="rounded-full" size="sm" onClick={() => setTab("experts")}>
-                <Users className="h-4 w-4 mr-1.5" />
                 Find mentors
               </Button>
             </div>
           )}
         </div>
       )}
+      </DashboardCard>
 
       {bookTarget && (
         <ConsultBookDialog

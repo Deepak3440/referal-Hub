@@ -1,22 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import {
   useListMyJobs,
   useGetDashboardStats,
   useCreateJob,
   useGetMe,
+  useListReferrals,
   getGetDashboardStatsQueryKey,
+  getListMyJobsQueryKey,
+  getListReferralsQueryKey,
 } from "@workspace/api-client-react";
 import { OfferOpeningCard } from "@/components/jobs/offer-opening-card";
 import { Button } from "@/components/ui/button";
 import {
   PlusCircle,
   Briefcase,
-  Sparkles,
   Clock,
-  Users,
   Trophy,
-  Handshake,
+  Building2,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -48,8 +49,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { isAlumniMember } from "@/lib/user-utils";
 import { useQuery } from "@tanstack/react-query";
 import { CompanyReferralsPanel } from "@/components/referrals/incoming-company-referrals";
+import type { ReferralFilter } from "@/components/referrals/referral-request-row";
 import { companyReferralApi, COMPANY_REFERRAL_QUERY_KEYS } from "@/lib/company-referral-api";
-import { StatCard } from "@/components/layout/stat-card";
+import {
+  buildJobReferralCounts,
+  companyReferralFilterCounts,
+  filterJobOpenings,
+  jobOpeningFilterCounts,
+  sumJobPending,
+} from "@/lib/offer-referral-filters";
+import { PageHeader, DashboardCard } from "@/components/layout/page-header";
+import { SegmentFilterChip, SegmentGroup, SegmentTab } from "@/components/layout/segmented-control";
 import { cn } from "@/lib/utils";
 import {
   JOB_WORK_TYPE_OPTIONS,
@@ -104,6 +114,21 @@ function FormSection({ title, children }: { title: string; children: React.React
   );
 }
 
+type OfferMainTab = "company" | "jobs";
+
+const FILTER_LABELS: Record<ReferralFilter, string> = {
+  all: "All",
+  pending: "Pending",
+  active: "Active",
+  closed: "Closed",
+};
+
+const FILTER_EMPTY_JOBS: Partial<Record<ReferralFilter, string>> = {
+  pending: "No openings with pending requests — you're all caught up.",
+  active: "No openings with active referrals right now.",
+  closed: "All your openings have received at least one request.",
+};
+
 export default function MyListings() {
   const [, setLocation] = useLocation();
   const { data: me } = useGetMe();
@@ -115,15 +140,29 @@ export default function MyListings() {
     }
   }, [me, canPostJobs, setLocation]);
 
-  const { data: stats, isLoading: isStatsLoading } = useGetDashboardStats();
-  const { data: myJobs, isLoading: isMyJobsLoading } = useListMyJobs();
+  const { data: stats } = useGetDashboardStats({
+    query: { queryKey: getGetDashboardStatsQueryKey() },
+  });
+  const { data: myJobs, isLoading: isMyJobsLoading } = useListMyJobs({
+    query: { queryKey: getListMyJobsQueryKey() },
+  });
   const { data: companyIncoming } = useQuery({
     queryKey: COMPANY_REFERRAL_QUERY_KEYS.incoming,
     queryFn: () => companyReferralApi.listIncoming(),
     enabled: Boolean(me),
   });
-  const companyPending =
-    companyIncoming?.items.filter((r) => r.referrerStatus === "pending").length ?? 0;
+  const { data: receivedReferrals } = useListReferrals(
+    { role: "referrer" },
+    {
+      query: {
+        queryKey: getListReferralsQueryKey({ role: "referrer" }),
+        enabled: Boolean(me),
+      },
+    },
+  );
+  const [mainTab, setMainTab] = useState<OfferMainTab>("company");
+  const [statusFilter, setStatusFilter] = useState<ReferralFilter>("all");
+  const [tabInitialized, setTabInitialized] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const createJob = useCreateJob();
   const { toast } = useToast();
@@ -150,6 +189,52 @@ export default function MyListings() {
   const salaryDisclosed = form.watch("salaryDisclosed");
   const workType = form.watch("workType");
   const openingCount = myJobs?.length ?? 0;
+  const companyItems = companyIncoming?.items ?? [];
+  const jobReferralCounts = useMemo(
+    () => buildJobReferralCounts(receivedReferrals ?? []),
+    [receivedReferrals],
+  );
+  const companyCounts = useMemo(() => companyReferralFilterCounts(companyItems), [companyItems]);
+  const jobCounts = useMemo(
+    () => jobOpeningFilterCounts(myJobs ?? [], jobReferralCounts),
+    [myJobs, jobReferralCounts],
+  );
+  const filteredJobs = useMemo(
+    () => filterJobOpenings(myJobs ?? [], statusFilter, jobReferralCounts),
+    [myJobs, statusFilter, jobReferralCounts],
+  );
+  const companyPending =
+    companyIncoming?.items.filter((r) => r.referrerStatus === "pending").length ?? 0;
+  const jobPending = sumJobPending(jobReferralCounts);
+  const companyActive = companyCounts.active;
+
+  const activeCounts = mainTab === "company" ? companyCounts : jobCounts;
+  const activePending = mainTab === "company" ? companyPending : jobCounts.pending;
+  const activeActive = mainTab === "company" ? companyActive : jobCounts.active;
+  const closedLabel = mainTab === "company" ? "Closed" : "No requests";
+
+  const switchTab = (tab: OfferMainTab) => {
+    setMainTab(tab);
+    setStatusFilter("all");
+  };
+
+  useEffect(() => {
+    if (tabInitialized) return;
+    if (companyPending > 0 || companyCounts.all > 0) {
+      setMainTab("company");
+      setTabInitialized(true);
+      return;
+    }
+    if (!isMyJobsLoading && openingCount > 0) {
+      setMainTab("jobs");
+      setTabInitialized(true);
+      return;
+    }
+    setTabInitialized(true);
+  }, [tabInitialized, companyPending, companyCounts.all, isMyJobsLoading, openingCount]);
+
+  const listCount =
+    mainTab === "company" ? activeCounts[statusFilter] : filteredJobs.length;
 
   const onSubmit = (data: JobFormValues) => {
     const { isRemote, isHybrid } = workTypeToFlags(data.workType);
@@ -438,139 +523,173 @@ export default function MyListings() {
   );
 
   return (
-    <div className="space-y-5">
-      {/* Hero */}
-      <section className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/8 via-card to-card overflow-hidden shadow-sm">
-        <div className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-primary">
-              <Sparkles className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wide">Alumni referrals</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Offer referrals at your company</h2>
-            <p className="text-sm text-muted-foreground max-w-lg">
-              Post openings you can refer for, review incoming requests, and earn points when candidates get hired.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            {postDialog}
-          </div>
-        </div>
-      </section>
+    <div className="space-y-4">
+      <PageHeader description="Review company requests and manage referrals on your posted openings.">
+        {postDialog}
+      </PageHeader>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <StatCard
-          label="Openings posted"
-          value={stats?.totalJobsPosted ?? 0}
-          icon={Briefcase}
-          loading={isStatsLoading}
-        />
-        <StatCard
-          label="Pending requests"
-          value={stats?.pendingReferrals ?? 0}
-          icon={Clock}
-          highlight={(stats?.pendingReferrals ?? 0) > 0}
-          loading={isStatsLoading}
-        />
-        <StatCard
-          label="Active referrals"
-          value={stats?.activeReferrals ?? 0}
-          icon={Users}
-          loading={isStatsLoading}
-        />
-      </div>
+      <DashboardCard className="overflow-hidden">
+        <div className="flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <SegmentGroup>
+            <SegmentTab
+              active={mainTab === "company"}
+              icon={Building2}
+              label="Company"
+              count={companyCounts.all}
+              badge={companyPending}
+              onClick={() => switchTab("company")}
+            />
+            <SegmentTab
+              active={mainTab === "jobs"}
+              icon={Briefcase}
+              label="Openings"
+              count={openingCount}
+              badge={jobPending}
+              onClick={() => switchTab("jobs")}
+            />
+          </SegmentGroup>
 
-      {/* Main content + sidebar */}
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_272px] gap-5">
-        <div className="space-y-4 min-w-0">
-          {me && <CompanyReferralsPanel currentUserId={me.id} />}
-
-          <div className="space-y-1 px-0.5">
-            <div className="flex items-center justify-between gap-3">
-            <h3 className="text-base font-bold tracking-tight text-foreground">
-              Your openings
-              {!isMyJobsLoading && (
-                <span className="text-muted-foreground font-semibold ml-1.5">({openingCount})</span>
-              )}
-            </h3>
-            {openingCount > 0 && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
-                <Trophy className="h-3.5 w-3.5 text-primary" />
-                <span>{stats?.totalPointsEarned ?? 0} pts earned</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <SegmentGroup>
+              <SegmentFilterChip
+                active={statusFilter === "all"}
+                label="All"
+                count={activeCounts.all}
+                onClick={() => setStatusFilter("all")}
+              />
+              <SegmentFilterChip
+                active={statusFilter === "pending"}
+                label="Pending"
+                count={activePending}
+                highlight={activePending > 0 || (mainTab === "jobs" && jobPending > 0)}
+                onClick={() => setStatusFilter("pending")}
+              />
+              <SegmentFilterChip
+                active={statusFilter === "active"}
+                label="Active"
+                count={activeActive}
+                onClick={() => setStatusFilter("active")}
+              />
+              <SegmentFilterChip
+                active={statusFilter === "closed"}
+                label={closedLabel}
+                count={activeCounts.closed}
+                onClick={() => setStatusFilter("closed")}
+              />
+            </SegmentGroup>
+            {mainTab === "jobs" && openingCount > 0 && (
+              <div className="hidden items-center gap-1 text-xs text-muted-foreground sm:inline-flex">
+                <Trophy className="h-3 w-3 text-primary" />
+                <span>{stats?.totalPointsEarned ?? 0} pts</span>
               </div>
             )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Job postings — manage incoming requests per opening
-            </p>
           </div>
+        </div>
 
-          {isMyJobsLoading ? (
-            <div className="space-y-4">
-              {[1, 2].map((i) => (
-                <Skeleton key={i} className="h-[200px] rounded-2xl" />
-              ))}
-            </div>
-          ) : myJobs && myJobs.length > 0 ? (
-            <div className="space-y-4">
-              {myJobs.map((job) => (
-                <OfferOpeningCard key={job.id} job={job} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl border bg-card text-center py-14 px-6 shadow-sm">
-              <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Briefcase className="h-7 w-7 text-primary/70" />
-              </div>
-              <h3 className="text-lg font-semibold">No referral openings yet</h3>
-              <p className="text-sm text-muted-foreground mt-1.5 max-w-sm mx-auto">
-                Post a role at your company. When someone requests a referral, you&apos;ll review and respond here.
-              </p>
-              <Button className="mt-5 rounded-full" onClick={() => setIsDialogOpen(true)}>
-                <PlusCircle className="h-4 w-4 mr-1.5" />
-                Post your first opening
-              </Button>
-            </div>
+        {(companyPending > 0 || jobPending > 0) && statusFilter !== "pending" && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b bg-muted/20 px-4 py-2 text-xs text-muted-foreground">
+            <Clock className="h-3.5 w-3.5 shrink-0 text-warning" />
+            {companyPending > 0 && (
+              <span>
+                <strong className="text-foreground">{companyPending}</strong> company pending
+              </span>
+            )}
+            {jobPending > 0 && (
+              <span>
+                <strong className="text-foreground">{jobPending}</strong> job pending
+              </span>
+            )}
+            <button
+              type="button"
+              className="font-medium text-primary hover:underline"
+              onClick={() => setStatusFilter("pending")}
+            >
+              View pending
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between gap-3 border-b bg-muted/10 px-4 py-2">
+          <p className="text-xs text-muted-foreground">
+            {mainTab === "company" ? "Company requests" : "Your openings"}
+            {statusFilter !== "all" && (
+              <span className="text-foreground"> · {FILTER_LABELS[statusFilter]}</span>
+            )}
+            {listCount > 0 && (
+              <span className="text-foreground/80"> · {listCount} shown</span>
+            )}
+          </p>
+          {statusFilter !== "all" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => setStatusFilter("all")}
+            >
+              Clear
+            </Button>
           )}
         </div>
 
-        <aside className="space-y-4 xl:sticky xl:top-4 xl:self-start">
-          <div className="rounded-xl border bg-card p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-foreground font-medium mb-3">
-              <Handshake className="h-4 w-4 text-primary" />
-              How referrals work
-            </div>
-            <ol className="space-y-2.5 text-xs text-muted-foreground list-decimal list-inside">
-              <li>Post an opening with role details and reward points</li>
-              <li>Requesters send a note when they want your referral</li>
-              <li>Accept, chat, and move them through your company process</li>
-              <li>Earn points when they get referred and hired</li>
-            </ol>
+        {mainTab === "company" ? (
+          me && (
+            <CompanyReferralsPanel
+              currentUserId={me.id}
+              embedded
+              statusFilter={statusFilter}
+            />
+          )
+        ) : isMyJobsLoading ? (
+          <div className="space-y-3 p-4">
+            {[1, 2].map((i) => (
+              <Skeleton key={i} className="h-[180px] rounded-xl" />
+            ))}
           </div>
-
-          {((stats?.pendingReferrals ?? 0) > 0 || companyPending > 0) && (
-            <div className="rounded-xl border border-warning/35 bg-warning/10 p-4 text-sm space-y-2">
-              {(stats?.pendingReferrals ?? 0) > 0 && (
-                <p className="font-medium text-foreground flex items-center gap-2">
-                  <Clock className="h-4 w-4 shrink-0 text-warning" />
-                  {stats?.pendingReferrals} pending job request
-                  {(stats?.pendingReferrals ?? 0) !== 1 ? "s" : ""}
-                </p>
-              )}
-              {companyPending > 0 && (
-                <p className="font-medium text-foreground flex items-center gap-2">
-                  <Clock className="h-4 w-4 shrink-0 text-warning" />
-                  {companyPending} pending company request{companyPending !== 1 ? "s" : ""}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Review company requests above or expand an opening below to manage job referrals.
-              </p>
+        ) : filteredJobs.length > 0 ? (
+          <div className="space-y-3 p-4">
+            {filteredJobs.map((job) => {
+              const pendingCount = jobReferralCounts.get(job.id)?.pending ?? 0;
+              return (
+                <OfferOpeningCard
+                  key={job.id}
+                  job={job}
+                  pendingCount={pendingCount}
+                  focusPending={statusFilter === "pending"}
+                />
+              );
+            })}
+          </div>
+        ) : openingCount === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+              <Briefcase className="h-5 w-5 text-primary/70" />
             </div>
-          )}
-        </aside>
-      </div>
+            <h3 className="text-base font-semibold">No referral openings yet</h3>
+            <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+              Post a role at your company. Referral requests will show up here.
+            </p>
+            <Button className="mt-4 rounded-full" size="sm" onClick={() => setIsDialogOpen(true)}>
+              <PlusCircle className="mr-1.5 h-4 w-4" />
+              Post opening
+            </Button>
+          </div>
+        ) : (
+          <div className="m-4 rounded-lg border border-dashed bg-muted/20 px-6 py-10 text-center">
+            <Briefcase className="mx-auto mb-2 h-6 w-6 text-muted-foreground/40" />
+            <p className="text-sm text-foreground">
+              {FILTER_EMPTY_JOBS[statusFilter] ?? "No openings match this filter."}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 rounded-full"
+              onClick={() => setStatusFilter("all")}
+            >
+              Show all
+            </Button>
+          </div>
+        )}
+      </DashboardCard>
     </div>
   );
 }

@@ -24,7 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { memberTypeLabel, isAlumniMember } from "@/lib/user-utils";
 import { BRAND } from "@/lib/brand";
-import { cn } from "@/lib/utils";
+import { SegmentGroup, SegmentTab } from "@/components/layout/segmented-control";
 
 type ReferralBrowseTab = "companies" | "jobs";
 
@@ -206,44 +206,22 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="inline-flex rounded-full border border-border bg-muted/50 p-1">
-            <button
-              type="button"
+          <SegmentGroup>
+            <SegmentTab
+              active={referralTab === "companies"}
+              icon={Building2}
+              label="Companies"
+              count={companyReferrers?.total ?? 0}
               onClick={() => setReferralTab("companies")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium transition-all",
-                referralTab === "companies"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <Building2 className="h-3.5 w-3.5" />
-              Companies
-              {(companyReferrers?.total ?? 0) > 0 && (
-                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-normal">
-                  {companyReferrers?.total}
-                </Badge>
-              )}
-            </button>
-            <button
-              type="button"
+            />
+            <SegmentTab
+              active={referralTab === "jobs"}
+              icon={Briefcase}
+              label="Jobs"
+              count={isLoading ? undefined : communityJobs.length}
               onClick={() => setReferralTab("jobs")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium transition-all",
-                referralTab === "jobs"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <Briefcase className="h-3.5 w-3.5" />
-              Jobs
-              {!isLoading && communityJobs.length > 0 && (
-                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-normal">
-                  {communityJobs.length}
-                </Badge>
-              )}
-            </button>
-          </div>
+            />
+          </SegmentGroup>
         </div>
 
         <div className="p-4 sm:p-5">

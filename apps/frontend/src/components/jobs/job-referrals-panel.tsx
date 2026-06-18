@@ -42,6 +42,8 @@ export function JobReferralsPanel({
   defaultOpen = false,
   requestCount = 0,
   embedded = false,
+  initialFilter = "all",
+  knownPendingCount = 0,
 }: {
   jobId: number;
   jobTitle?: string;
@@ -49,9 +51,11 @@ export function JobReferralsPanel({
   defaultOpen?: boolean;
   requestCount?: number;
   embedded?: boolean;
+  initialFilter?: ReferralFilter;
+  knownPendingCount?: number;
 }) {
   const [open, setOpen] = useState(defaultOpen);
-  const [filter, setFilter] = useState<ReferralFilter>("all");
+  const [filter, setFilter] = useState<ReferralFilter>(initialFilter);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [filterInitialized, setFilterInitialized] = useState(false);
 
@@ -72,6 +76,15 @@ export function JobReferralsPanel({
   const filtered = useMemo(() => filterReferrals(referrals, filter), [referrals, filter]);
   const total = referrals.length || requestCount;
   const pending = counts.pending;
+  const pendingLabel = open ? pending : knownPendingCount || pending;
+
+  useEffect(() => {
+    setFilter(initialFilter);
+    if (initialFilter === "pending" && knownPendingCount > 0) {
+      setOpen(true);
+      setFilterInitialized(true);
+    }
+  }, [initialFilter, knownPendingCount, jobId]);
 
   useEffect(() => {
     if (!open || expandedId != null) return;
@@ -81,9 +94,9 @@ export function JobReferralsPanel({
 
   useEffect(() => {
     if (!open || filterInitialized || isLoading) return;
-    if (pending > 0) setFilter("pending");
+    if (initialFilter === "all" && pending > 0) setFilter("pending");
     setFilterInitialized(true);
-  }, [open, pending, isLoading, filterInitialized]);
+  }, [open, pending, isLoading, filterInitialized, initialFilter]);
 
   useEffect(() => {
     if (!open) setFilterInitialized(false);
@@ -148,17 +161,14 @@ export function JobReferralsPanel({
       >
         <span className="flex items-center gap-2 font-medium text-sm min-w-0 flex-1">
           <Users className="h-4 w-4 shrink-0 text-primary" />
-          <span className="truncate">
-            Manage referrals{total > 0 ? ` (${total})` : ""}
-          </span>
+          <span className="truncate">Manage referrals{total > 0 ? ` (${total})` : ""}</span>
         </span>
-        <span className="flex items-center gap-1.5 text-xs flex-wrap justify-end shrink-0 max-w-[50%] sm:max-w-none">
-          {pending > 0 && (
-            <Badge className="bg-warning hover:bg-warning text-warning-foreground border-0">
-              {pending} pending
+        <span className="flex items-center gap-1.5 text-xs shrink-0">
+          {pendingLabel > 0 && (
+            <Badge className="bg-warning hover:bg-warning text-warning-foreground border-0 text-[10px]">
+              {pendingLabel} pending
             </Badge>
           )}
-          {counts.active > 0 && <Badge variant="secondary">{counts.active} active</Badge>}
           {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </span>
       </Button>

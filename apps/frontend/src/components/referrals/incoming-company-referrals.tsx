@@ -9,12 +9,14 @@ import { ReferralChatPanel } from "@/components/messages/referral-chat-panel";
 import { ReferralActions } from "@/components/referrals/referral-actions";
 import { ReferralProgressBar } from "@/components/referrals/referral-progress-bar";
 import { ReferralStatusBadge } from "@/components/referrals/referral-status-badge";
+import type { ReferralFilter } from "@/components/referrals/referral-request-row";
 import {
   companyReferralApi,
   COMPANY_REFERRAL_QUERY_KEYS,
   type CompanyReferrerViewStatus,
   type IncomingCompanyReferralRequest,
 } from "@/lib/company-referral-api";
+import { filterCompanyReferrals } from "@/lib/offer-referral-filters";
 import { buildConversationId } from "@/lib/conversation";
 import { resolveUploadUrl } from "@/lib/upload-url";
 import { avatarBgClass } from "@/lib/avatar-colors";
@@ -218,8 +220,16 @@ function CompanyReferralRequestRow({
   );
 }
 
-export function CompanyReferralsPanel({ currentUserId }: { currentUserId: number }) {
-  const [open, setOpen] = useState(false);
+export function CompanyReferralsPanel({
+  currentUserId,
+  embedded = false,
+  statusFilter = "all",
+}: {
+  currentUserId: number;
+  embedded?: boolean;
+  statusFilter?: ReferralFilter;
+}) {
+  const [open, setOpen] = useState(embedded);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -230,13 +240,13 @@ export function CompanyReferralsPanel({ currentUserId }: { currentUserId: number
   });
 
   const items = data?.items ?? [];
-  const visibleItems = useMemo(
-    () => items.filter((r) => r.referrerStatus !== "personal_rejected"),
-    [items],
+  const filteredItems = useMemo(
+    () => filterCompanyReferrals(items, statusFilter),
+    [items, statusFilter],
   );
   const pending = useMemo(
-    () => visibleItems.filter((r) => r.referrerStatus === "pending").length,
-    [visibleItems],
+    () => filterCompanyReferrals(items, "pending").length,
+    [items],
   );
 
   const statusMutation = useMutation({
@@ -262,10 +272,62 @@ export function CompanyReferralsPanel({ currentUserId }: { currentUserId: number
   });
 
   useEffect(() => {
+    if (embedded) {
+      setOpen(true);
+      return;
+    }
     if (!isLoading && pending > 0) setOpen(true);
-  }, [isLoading, pending]);
+  }, [embedded, isLoading, pending]);
 
-  if (!isLoading && visibleItems.length === 0) return null;
+  useEffect(() => {
+    if (statusFilter === "pending" && filteredItems.length > 0) {
+      const firstPending = filteredItems.find((r) => r.referrerStatus === "pending");
+      if (firstPending) setExpandedId(firstPending.id);
+    }
+  }, [statusFilter, filteredItems]);
+
+  const listBody = (
+    <>
+      {isLoading ? (
+        <div className="p-4 space-y-3">
+          <Skeleton className="h-16 w-full rounded-lg" />
+          <Skeleton className="h-16 w-full rounded-lg" />
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="text-center py-12 px-4">
+          <Inbox className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+          <p className="text-sm font-medium text-foreground">
+            {statusFilter === "all"
+              ? "No company requests yet"
+              : `No ${statusFilter} company requests`}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+            When students request a referral at your company, they appear here for you to review.
+          </p>
+        </div>
+      ) : (
+        <div className={cn(filteredItems.length > 4 && "max-h-[min(560px,70vh)] overflow-y-auto")}>
+          {filteredItems.map((request) => (
+            <CompanyReferralRequestRow
+              key={request.id}
+              request={request}
+              currentUserId={currentUserId}
+              expanded={expandedId === request.id}
+              onToggle={() => setExpandedId((id) => (id === request.id ? null : request.id))}
+              updating={statusMutation.isPending}
+              onUpdateStatus={(status) => statusMutation.mutate({ id: request.id, status })}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  );
+
+  if (embedded) {
+    return <div className="min-w-0">{listBody}</div>;
+  }
+
+  if (!isLoading && filterCompanyReferrals(items, "all").length === 0) return null;
 
   return (
     <section className="space-y-2">
@@ -273,8 +335,10 @@ export function CompanyReferralsPanel({ currentUserId }: { currentUserId: number
         <div className="min-w-0">
           <h3 className="text-base font-bold tracking-tight text-foreground">
             Company requests
-            {!isLoading && visibleItems.length > 0 && (
-              <span className="text-muted-foreground font-semibold ml-1.5">({visibleItems.length})</span>
+            {!isLoading && filterCompanyReferrals(items, "all").length > 0 && (
+              <span className="text-muted-foreground font-semibold ml-1.5">
+                ({filterCompanyReferrals(items, "all").length})
+              </span>
             )}
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -303,32 +367,7 @@ export function CompanyReferralsPanel({ currentUserId }: { currentUserId: number
       )}
 
       {open && (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
-          {isLoading ? (
-            <div className="p-3">
-              <Skeleton className="h-16 w-full" />
-            </div>
-          ) : visibleItems.length === 0 ? (
-            <div className="text-center py-8 px-4">
-              <Inbox className="h-7 w-7 mx-auto text-muted-foreground/40 mb-2" />
-              <p className="text-sm text-muted-foreground">No active company requests.</p>
-            </div>
-          ) : (
-            <div className={cn(visibleItems.length > 4 && "max-h-[min(560px,70vh)] overflow-y-auto")}>
-              {visibleItems.map((request) => (
-                <CompanyReferralRequestRow
-                  key={request.id}
-                  request={request}
-                  currentUserId={currentUserId}
-                  expanded={expandedId === request.id}
-                  onToggle={() => setExpandedId((id) => (id === request.id ? null : request.id))}
-                  updating={statusMutation.isPending}
-                  onUpdateStatus={(status) => statusMutation.mutate({ id: request.id, status })}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        <div className="rounded-xl border border-border bg-card overflow-hidden">{listBody}</div>
       )}
     </section>
   );

@@ -11,7 +11,8 @@
     "dev:backend": "pnpm --filter @referaa/backend run dev",
     "dev:frontend": "pnpm --filter @referaa/frontend run dev",
     "seed:demo": "pnpm --filter @referaa/backend run seed:demo",
-    "seed:demo-referrals": "pnpm --filter @referaa/backend run seed:demo-referrals"
+    "seed:demo-referrals": "pnpm --filter @referaa/backend run seed:demo-referrals",
+    "seed:demo-offer-deepak": "pnpm --filter @referaa/backend run seed:demo-offer-deepak"
   },
   "devDependencies": {
     "prettier": "^3.8.3",

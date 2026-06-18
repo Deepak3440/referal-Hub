@@ -17,10 +17,19 @@ import { JobReferralsPanel } from "@/components/jobs/job-referrals-panel";
 import { companyColor } from "@/lib/avatar-colors";
 import { cn } from "@/lib/utils";
 
-export function OfferOpeningCard({ job }: { job: Job }) {
+export function OfferOpeningCard({
+  job,
+  pendingCount = 0,
+  focusPending = false,
+}: {
+  job: Job;
+  pendingCount?: number;
+  focusPending?: boolean;
+}) {
   const experience = formatJobExperience(job.experienceMin);
   const salary = formatJobSalary(job);
   const hasRequests = job.referralCount > 0;
+  const needsResponse = pendingCount > 0;
 
   return (
     <article
@@ -28,6 +37,8 @@ export function OfferOpeningCard({ job }: { job: Job }) {
         "rounded-2xl border bg-card overflow-hidden shadow-sm transition-all duration-200",
         "hover:border-primary/30 hover:shadow-md",
         hasRequests && "border-primary/20",
+        needsResponse && "border-warning/50 ring-1 ring-warning/20",
+        focusPending && needsResponse && "shadow-md",
       )}
     >
       <div className="p-4 sm:p-5">
@@ -133,8 +144,10 @@ export function OfferOpeningCard({ job }: { job: Job }) {
           jobTitle={job.title}
           jobRewardPoints={job.rewardPoints}
           requestCount={job.referralCount}
-          defaultOpen={false}
+          defaultOpen={focusPending && needsResponse}
           embedded
+          initialFilter={focusPending && needsResponse ? "pending" : "all"}
+          knownPendingCount={pendingCount}
         />
       </div>
     </article>

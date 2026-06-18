@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import type { MentorFilters } from "@/lib/mentor-utils";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { Users, CalendarCheck } from "lucide-react";
+import { SegmentGroup, SegmentTab } from "@/components/layout/segmented-control";
 
 type Props = {
   filters: MentorFilters;
@@ -102,47 +104,32 @@ export function MentorTabBar({
   tab,
   onTabChange,
   mentorCount,
+  sessionCount,
   pendingSessions,
 }: {
   tab: "experts" | "sessions";
   onTabChange: (t: "experts" | "sessions") => void;
   mentorCount: number;
+  sessionCount: number;
   pendingSessions: number;
 }) {
   return (
-    <div className="inline-flex p-1 rounded-xl bg-muted/40 border border-border/60 gap-1">
-      <button
-        type="button"
+    <SegmentGroup>
+      <SegmentTab
+        active={tab === "experts"}
+        icon={Users}
+        label="Find mentors"
+        count={mentorCount}
         onClick={() => onTabChange("experts")}
-        className={cn(
-          "rounded-lg py-2 px-4 text-sm font-medium transition-all",
-          tab === "experts"
-            ? "bg-card text-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground",
-        )}
-      >
-        Find mentors
-        {mentorCount > 0 && (
-          <span className="ml-1.5 text-[10px] text-muted-foreground">({mentorCount})</span>
-        )}
-      </button>
-      <button
-        type="button"
+      />
+      <SegmentTab
+        active={tab === "sessions"}
+        icon={CalendarCheck}
+        label="My sessions"
+        count={sessionCount}
+        badge={pendingSessions}
         onClick={() => onTabChange("sessions")}
-        className={cn(
-          "rounded-lg py-2 px-4 text-sm font-medium transition-all relative",
-          tab === "sessions"
-            ? "bg-card text-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground",
-        )}
-      >
-        My sessions
-        {pendingSessions > 0 && (
-          <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
-            {pendingSessions}
-          </span>
-        )}
-      </button>
-    </div>
+      />
+    </SegmentGroup>
   );
 }

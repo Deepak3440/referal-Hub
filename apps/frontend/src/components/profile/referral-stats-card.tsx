@@ -2,6 +2,7 @@ import type { ReferralStats } from "@/lib/referral-stats-api";
 import { DashboardCard } from "@/components/layout/page-header";
 import { Link } from "wouter";
 import { CheckCircle2, TrendingUp, Trophy } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 function StatBox({ label, value, suffix }: { label: string; value: number; suffix?: string }) {
   return (
@@ -57,45 +58,74 @@ export function ReferralStatsCard({ stats }: { stats: ReferralStats }) {
 export function LeaderboardCard({
   items,
   title = "Top alumni referrers",
+  embedded = false,
 }: {
   items: Array<{
     user: { id: number; fullName: string; company?: string | null; currentRole?: string | null };
     stats: { hires: number; interviews: number; acceptanceRate: number; referralsGiven: number };
   }>;
   title?: string;
+  embedded?: boolean;
 }) {
   if (!items.length) return null;
 
-  return (
-    <DashboardCard className="p-4">
+  const content = (
+    <>
       <div className="flex items-center gap-2 mb-3">
-        <Trophy className="h-4 w-4 text-primary" />
-        <h3 className="font-semibold text-sm">{title}</h3>
+        <Trophy className="h-4 w-4 text-primary shrink-0" />
+        <h3 className="font-semibold text-sm leading-tight">{title}</h3>
       </div>
-      <ul className="space-y-2">
-        {items.map((entry, i) => (
-          <li key={entry.user.id}>
-            <Link
-              href={`/profile/${entry.user.id}`}
-              className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-muted/50 transition-colors"
-            >
-              <span className="text-xs font-bold text-primary w-5">{i + 1}</span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate">{entry.user.fullName}</p>
-                <p className="text-[11px] text-muted-foreground truncate">
-                  {[entry.user.currentRole, entry.user.company].filter(Boolean).join(" · ")}
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-xs font-semibold">{entry.stats.hires} hires</p>
-                <p className="text-[10px] text-muted-foreground">
-                  {entry.stats.acceptanceRate}% accept
-                </p>
-              </div>
-            </Link>
-          </li>
-        ))}
+      <ul className={cn(embedded ? "space-y-4" : "space-y-2")}>
+        {items.map((entry, i) => {
+          const subtitle = [entry.user.currentRole, entry.user.company].filter(Boolean).join(" @ ");
+          const initial = entry.user.fullName.trim().charAt(0).toUpperCase() || "?";
+
+          return (
+            <li key={entry.user.id}>
+              <Link
+                href={`/profile/${entry.user.id}`}
+                className={cn(
+                  "group block rounded-lg transition-colors",
+                  embedded ? "hover:bg-muted/40 -mx-1 px-1 py-1" : "rounded-lg px-2 py-2 hover:bg-muted/50",
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex shrink-0 flex-col items-center gap-1">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                      {initial}
+                    </span>
+                    <span className="text-[10px] font-bold text-muted-foreground">#{i + 1}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold leading-snug text-foreground group-hover:text-primary transition-colors break-words">
+                      {entry.user.fullName}
+                    </p>
+                    {subtitle && (
+                      <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground break-words">
+                        {subtitle}
+                      </p>
+                    )}
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-foreground">
+                        {entry.stats.hires} hires
+                      </span>
+                      <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        {entry.stats.acceptanceRate}% accept
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </li>
+          );
+        })}
       </ul>
-    </DashboardCard>
+    </>
   );
+
+  if (embedded) {
+    return <section className="min-w-0">{content}</section>;
+  }
+
+  return <DashboardCard className="p-4">{content}</DashboardCard>;
 }

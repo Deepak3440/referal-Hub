@@ -4,19 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useLocation } from "wouter";
-import {
-  Briefcase,
-  Building2,
-  CheckCircle2,
-  Clock,
-  ListChecks,
-  TrendingUp,
-} from "lucide-react";
+import { Briefcase, Building2 } from "lucide-react";
 import { CompanyReferralRequestCard } from "@/components/referrals/company-referral-request-card";
 import { JobReferralRequestCard } from "@/components/referrals/job-referral-request-card";
 import { useSyncPoints } from "@/hooks/use-sync-points";
 import { PageHeader, DashboardCard } from "@/components/layout/page-header";
-import { StatCard } from "@/components/layout/stat-card";
+import { SegmentFilterChip, SegmentGroup } from "@/components/layout/segmented-control";
 import { companyReferralApi, COMPANY_REFERRAL_QUERY_KEYS } from "@/lib/company-referral-api";
 import type { CompanyReferralRequestResult } from "@/lib/company-referral-api";
 import { DEMO_COMPANY_REFERRALS, DEMO_JOB_REFERRALS } from "@/lib/referrals-track-demo";
@@ -133,43 +126,51 @@ export default function Referrals() {
       />
 
       {!isLoading && stats.total > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard
-            label="Total requests"
-            value={stats.total}
-            icon={ListChecks}
-            sublabel={`${stats.jobs} job · ${stats.company} company`}
-            active={statusFilter === "all"}
-            onClick={() => setStatusFilter("all")}
-          />
-          <StatCard
-            label="Pending"
-            value={stats.pending}
-            icon={Clock}
-            highlight={stats.pending > 0}
-            sublabel={stats.pending > 0 ? "Waiting for alumni" : "None waiting"}
-            active={statusFilter === "pending"}
-            onClick={() => setStatusFilter("pending")}
-          />
-          <StatCard
-            label="In progress"
-            value={stats.inProgress}
-            icon={TrendingUp}
-            highlight={stats.inProgress > 0}
-            sublabel="Accepted → interview"
-            active={statusFilter === "in_progress"}
-            onClick={() => setStatusFilter("in_progress")}
-          />
-          <StatCard
-            label="Hired"
-            value={stats.hired}
-            icon={CheckCircle2}
-            highlight={stats.hired > 0}
-            sublabel={stats.hired > 0 ? "Congratulations!" : "Not yet"}
-            active={statusFilter === "hired"}
-            onClick={() => setStatusFilter("hired")}
-          />
-        </div>
+        <DashboardCard className="overflow-hidden">
+          <div className="flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground">
+              Filter your sent requests
+              {statusFilter !== "all" && (
+                <span className="font-medium text-foreground">
+                  {" "}
+                  · {visibleItems.length} shown
+                </span>
+              )}
+            </p>
+            <SegmentGroup>
+              <SegmentFilterChip
+                active={statusFilter === "all"}
+                label="All"
+                count={stats.total}
+                onClick={() => setStatusFilter("all")}
+              />
+              <SegmentFilterChip
+                active={statusFilter === "pending"}
+                label="Pending"
+                count={stats.pending}
+                highlight={stats.pending > 0}
+                onClick={() => setStatusFilter("pending")}
+              />
+              <SegmentFilterChip
+                active={statusFilter === "in_progress"}
+                label="In progress"
+                count={stats.inProgress}
+                highlight={stats.inProgress > 0}
+                onClick={() => setStatusFilter("in_progress")}
+              />
+              <SegmentFilterChip
+                active={statusFilter === "hired"}
+                label="Hired"
+                count={stats.hired}
+                highlight={stats.hired > 0}
+                onClick={() => setStatusFilter("hired")}
+              />
+            </SegmentGroup>
+          </div>
+          <div className="border-b bg-muted/10 px-4 py-2 text-[11px] text-muted-foreground">
+            {stats.jobs} job · {stats.company} company
+          </div>
+        </DashboardCard>
       )}
 
       {demoPreview && (
