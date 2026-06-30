@@ -12,11 +12,13 @@ import notificationsRouter from "./notifications";
 import referralStatsRouter from "./referral-stats";
 import configRouter from "./config";
 import companyReferralsRouter from "./company-referrals";
+import careerRouter from "./career";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(configRouter);
+router.use(careerRouter);
 router.use(authRouter);
 router.use(referralStatsRouter);
 router.use(usersRouter);

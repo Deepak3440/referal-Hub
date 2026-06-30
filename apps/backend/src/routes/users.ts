@@ -10,6 +10,13 @@ import {
   purchasePoints,
 } from "../services/pointsPurchase";
 import { deleteUserAccount } from "../services/deleteAccount";
+import {
+  buildPrimaryEducation,
+  deriveMemberType,
+  isAllowedCollege,
+  isAllowedPassoutYear,
+} from "../lib/member-type";
+import { isMentorshipTopicId } from "../lib/mentorship-topics";
 
 const workExperienceZ = z.object({
   company: z.string().min(1),
@@ -46,6 +53,8 @@ const certificationZ = z.object({
 });
 
 const ExtendedUpdateMeBody = UpdateMeBody.extend({
+  collegeName: z.string().min(1).optional(),
+  passoutYear: z.coerce.number().optional(),
   isWorkingProfessional: z.boolean().optional(),
   isConsultant: z.boolean().optional(),
   mentorshipDurationMinutes: z.coerce.number().int().min(15).max(120).optional().nullable(),
@@ -55,6 +64,7 @@ const ExtendedUpdateMeBody = UpdateMeBody.extend({
   education: z.array(educationZ).optional(),
   researchPapers: z.array(researchPaperZ).optional(),
   certifications: z.array(certificationZ).optional(),
+  mentorshipTopics: z.array(z.string()).max(7).optional(),
   avatarData: z.string().min(1).optional(),
   avatarMimeType: z.string().min(1).optional(),
 }).superRefine((data, ctx) => {
@@ -196,6 +206,66 @@ router.put("/users/me", requireAuth, async (req, res): Promise<void> => {
       });
       return;
     }
+  }
+
+  if (parsed.data.collegeName != null || parsed.data.passoutYear != null) {
+    const collegeName = parsed.data.collegeName?.trim() ?? user.education?.[0]?.institution ?? "";
+    const passoutYear =
+      parsed.data.passoutYear ?? user.education?.[0]?.batchYear ?? new Date().getFullYear();
+
+    if (!isAllowedCollege(collegeName)) {
+      res.status(400).json({ error: "Select a valid college" });
+      return;
+    }
+    if (!isAllowedPassoutYear(passoutYear)) {
+      res.status(400).json({ error: "Select a valid passout year" });
+      return;
+    }
+
+    const memberType = deriveMemberType(passoutYear);
+    const primaryEducation = buildPrimaryEducation(collegeName, passoutYear);
+    const extraEducation = (parsed.data.education ?? user.education ?? []).filter(
+      (entry, index) => !(index === 0 && entry.level === "UG"),
+    );
+
+    updateFields.memberType = memberType;
+    updateFields.education = [...primaryEducation, ...extraEducation];
+    delete updateFields.collegeName;
+    delete updateFields.passoutYear;
+
+    if (memberType === "student") {
+      updateFields.isWorkingProfessional = false;
+      updateFields.company = "";
+      updateFields.currentRole = "";
+      updateFields.experienceYears = 0;
+    }
+  } else if (parsed.data.education?.length) {
+    const first = parsed.data.education[0];
+    if (first?.batchYear != null && isAllowedPassoutYear(first.batchYear)) {
+      const memberType = deriveMemberType(first.batchYear);
+      updateFields.memberType = memberType;
+      if (memberType === "student") {
+        updateFields.isWorkingProfessional = false;
+        updateFields.company = "";
+        updateFields.currentRole = "";
+        updateFields.experienceYears = 0;
+      }
+    }
+  }
+
+  if (parsed.data.mentorshipTopics != null) {
+    updateFields.mentorshipTopics = parsed.data.mentorshipTopics.filter(isMentorshipTopicId);
+  }
+
+  const willBeConsultant =
+    (parsed.data.isConsultant as boolean | undefined) ?? user.isConsultant ?? false;
+  const topics =
+    (updateFields.mentorshipTopics as string[] | undefined) ?? user.mentorshipTopics ?? [];
+  if (willBeConsultant && topics.length === 0) {
+    res.status(400).json({
+      error: "Select at least one mentorship topic (e.g. Interview Prep, Career Switch).",
+    });
+    return;
   }
 
   const updated = await UserModel.findOneAndUpdate(

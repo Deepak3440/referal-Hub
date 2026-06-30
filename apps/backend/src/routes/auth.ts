@@ -23,6 +23,12 @@ import {
   renderVerifyEmailError,
   renderVerifyEmailSuccess,
 } from "../lib/verify-email-html";
+import {
+  buildPrimaryEducation,
+  deriveMemberType,
+  isAllowedCollege,
+  isAllowedPassoutYear,
+} from "../lib/member-type";
 
 const router: IRouter = Router();
 
@@ -31,9 +37,9 @@ const SignUpBody = z
     fullName: z.string().min(1, "Full name is required"),
     email: z.string().email("Invalid email address"),
     password: z.string().min(6, "Password must be at least 6 characters"),
-    memberType: z.enum(["student", "alumni"], {
-      errorMap: () => ({ message: "Select Student or Alumni" }),
-    }),
+    collegeName: z.string().min(1, "Select your college"),
+    passoutYear: z.coerce.number(),
+    memberType: z.enum(["student", "alumni"]).optional(),
     isWorkingProfessional: z.boolean(),
     company: z.string().optional(),
     currentRole: z.string().optional(),
@@ -52,7 +58,23 @@ const SignUpBody = z
         path: ["avatarData"],
       });
     }
-    if (data.isWorkingProfessional) {
+    if (!isAllowedCollege(data.collegeName)) {
+      ctx.addIssue({ code: "custom", message: "Select a valid college", path: ["collegeName"] });
+    }
+    if (!isAllowedPassoutYear(data.passoutYear)) {
+      ctx.addIssue({ code: "custom", message: "Select a valid passout year", path: ["passoutYear"] });
+    }
+
+    const memberType = deriveMemberType(data.passoutYear);
+    if (memberType === "student" && data.isWorkingProfessional) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Working professional details apply to alumni only",
+        path: ["isWorkingProfessional"],
+      });
+    }
+
+    if (memberType === "alumni" && data.isWorkingProfessional) {
       if (!data.company?.trim()) {
         ctx.addIssue({ code: "custom", message: "Organization name is required", path: ["company"] });
       }
@@ -98,7 +120,8 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
       fullName,
       email,
       password,
-      memberType,
+      collegeName,
+      passoutYear,
       isWorkingProfessional,
       isConsultant,
       company,
@@ -107,6 +130,9 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
       avatarData,
       avatarMimeType,
     } = parsed.data;
+    const memberType = deriveMemberType(passoutYear);
+    const workingProfessional = memberType === "alumni" && isWorkingProfessional;
+    const education = buildPrimaryEducation(collegeName, passoutYear);
     const normalizedEmail = email.toLowerCase().trim();
     const verificationEnabled = isEmailVerificationEnabled();
 
@@ -157,11 +183,12 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
       passwordHash,
       totalPoints: REWARD_CONFIG.initialUserPoints,
       memberType,
-      isWorkingProfessional,
+      education,
+      isWorkingProfessional: workingProfessional,
       isConsultant,
-      company: isWorkingProfessional ? company?.trim() : null,
-      currentRole: isWorkingProfessional ? currentRole?.trim() : null,
-      experienceYears: isWorkingProfessional ? experienceYears : null,
+      company: workingProfessional ? company?.trim() : null,
+      currentRole: workingProfessional ? currentRole?.trim() : null,
+      experienceYears: workingProfessional ? experienceYears : null,
       avatarUrl,
       ...verificationFields,
     });

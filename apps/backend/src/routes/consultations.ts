@@ -6,9 +6,9 @@ import {
   getNextSequence,
   toConsultation,
   toUserProfile,
-  publiclyVisibleUserFilter,
   type ConsultationDoc,
 } from "@workspace/db";
+import { listExperts } from "../services/expert-list";
 import { findPublicUserById, toPublicUserProfile } from "../lib/public-user";
 import { requireAuth } from "../middlewares/auth";
 import { normalizeGoogleMeetLink } from "../lib/meet-link";
@@ -79,65 +79,36 @@ router.get("/consultations/meet-config", requireAuth, (_req, res): void => {
   res.json({ autoMeetEnabled: isGoogleMeetAutoCreateEnabled() });
 });
 
-/** List all consultants for 1:1 mentorship (isConsultant = true) */
+/** List consultants for 1:1 mentorship — server-side filters + pagination */
 router.get("/consultations/experts", requireAuth, async (req, res): Promise<void> => {
   const user = (req as { currentUser: { id: number } }).currentUser;
-  const branch = typeof req.query.branch === "string" ? req.query.branch.trim().toLowerCase() : "";
-  const college = typeof req.query.college === "string" ? req.query.college.trim().toLowerCase() : "";
-  const graduationYearRaw = typeof req.query.graduationYear === "string" ? req.query.graduationYear.trim() : "";
-  const q = typeof req.query.q === "string" ? req.query.q.trim().toLowerCase() : "";
+  const pageRaw = typeof req.query.page === "string" ? req.query.page : "1";
+  const limitRaw = typeof req.query.limit === "string" ? req.query.limit : "20";
 
-  let users = await UserModel.find({
-    isConsultant: true,
-    id: { $ne: user.id },
-    ...publiclyVisibleUserFilter,
-  })
-    .sort({ totalPoints: -1 })
-    .lean();
+  const result = await listExperts({
+    excludeUserId: user.id,
+    q: typeof req.query.q === "string" ? req.query.q.trim() : undefined,
+    branch: typeof req.query.branch === "string" ? req.query.branch.trim() : undefined,
+    company: typeof req.query.company === "string" ? req.query.company.trim() : undefined,
+    college: typeof req.query.college === "string" ? req.query.college.trim() : undefined,
+    graduationYear:
+      typeof req.query.graduationYear === "string" ? req.query.graduationYear.trim() : undefined,
+    category: typeof req.query.category === "string" ? req.query.category.trim() : undefined,
+    experience: typeof req.query.experience === "string" ? req.query.experience.trim() : undefined,
+    sessionLength:
+      typeof req.query.sessionLength === "string" ? req.query.sessionLength.trim() : undefined,
+    price: typeof req.query.price === "string" ? req.query.price.trim() : undefined,
+    page: parseInt(pageRaw, 10),
+    limit: parseInt(limitRaw, 10),
+  });
 
-  if (college) {
-    users = users.filter((u) =>
-      (u.education ?? []).some((e) => e.institution?.toLowerCase().includes(college)),
-    );
-  }
-  if (branch) {
-    users = users.filter((u) =>
-      (u.education ?? []).some((e) => e.stream?.toLowerCase().includes(branch)),
-    );
-  }
-  if (graduationYearRaw) {
-    const year = parseInt(graduationYearRaw, 10);
-    if (!Number.isNaN(year)) {
-      users = users.filter((u) =>
-        (u.education ?? []).some((e) => e.batchYear === year),
-      );
-    }
-  }
-
-  if (q) {
-    users = users.filter((u) => {
-      const haystack = [
-        u.fullName,
-        u.headline,
-        u.bio,
-        u.currentRole,
-        u.company,
-        ...(u.skills ?? []),
-        ...(u.education ?? []).flatMap((e) => [
-          e.institution,
-          e.stream,
-          e.level,
-          e.batchYear != null ? String(e.batchYear) : null,
-        ]),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  }
-
-  res.json(users.map((u) => toUserProfile(u)));
+  res.json({
+    items: result.users.map((u) => toUserProfile(u)),
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+    hasMore: result.hasMore,
+  });
 });
 
 router.get("/consultations", requireAuth, async (req, res): Promise<void> => {
@@ -312,6 +283,13 @@ router.patch("/consultations/:consultationId", requireAuth, async (req, res): Pr
     update,
     { new: true },
   ).lean();
+
+  if (status === "completed") {
+    await UserModel.updateOne(
+      { id: row.consultantId },
+      { $inc: { mentorshipSessionsCompleted: 1 } },
+    );
+  }
 
   if (status === "scheduled" || status === "rejected") {
     const consultant = await UserModel.findOne({ id: row.consultantId }).lean();
