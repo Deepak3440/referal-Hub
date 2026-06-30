@@ -26,26 +26,26 @@ export function AuthSplitLayout({
             <BrandLogo className="h-9 w-9" linked={false} />
             <span className="text-lg font-bold tracking-tight">{BRAND.name}</span>
           </Link>
-          <Button variant="ghost" size="sm" className="rounded-full gap-1.5 text-muted-foreground" asChild>
+          <Button variant="ghost" className="h-10 rounded-full gap-2 px-5 text-sm text-muted-foreground" asChild>
             <Link href="/">
-              <ArrowLeft className="h-3.5 w-3.5" />
+              <ArrowLeft className="h-4 w-4" />
               Home
             </Link>
           </Button>
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-10 sm:py-14">
+      <main className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-muted/25 via-background to-background px-4 py-10 sm:py-14">
         <div
           className={cn(
             "w-full landing-fade-up",
-            wide ? "max-w-lg" : "max-w-md",
+            wide ? "max-w-xl" : "max-w-md",
           )}
         >
-          <div className="landing-hover-lift rounded-2xl border border-border/80 bg-card p-6 shadow-sm sm:p-8">
-            <div className="mb-6 space-y-1.5 text-center sm:text-left">
+          <div className="landing-hover-lift overflow-visible rounded-2xl border border-border/80 bg-card p-6 shadow-md sm:p-8">
+            <div className="mb-6 space-y-2 text-center">
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
-              <p className="text-sm text-muted-foreground">{subtitle}</p>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">{subtitle}</p>
             </div>
             {children}
           </div>

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import type { ProfileFormValues } from "@/components/profile/profile-form";
 import { SkillsInput } from "@/components/profile/skills-input";
+import { MentorshipTopicsPicker } from "@/components/profile/mentorship-topics-picker";
 import { MENTORSHIP_DURATION_OPTIONS } from "@/lib/mentor-utils";
 import {
   EMPTY_CERT,
@@ -127,6 +128,27 @@ export function MentorshipFormSections({ control }: { control: Control<ProfileFo
             )}
           />
         </div>
+      </div>
+
+      <div className="rounded-xl border border-primary/25 bg-card p-4 space-y-3">
+        <div>
+          <h3 className="font-semibold text-foreground">Mentorship topics</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Required — choose what students can find you under (Software, MBA, Career Switch, etc.).
+          </p>
+        </div>
+        <FormField
+          control={control}
+          name="mentorshipTopics"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <MentorshipTopicsPicker value={field.value ?? []} onChange={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
 
       {/* 1. About */}

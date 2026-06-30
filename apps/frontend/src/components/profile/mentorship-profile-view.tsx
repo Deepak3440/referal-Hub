@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { MentorshipSessionOffer } from "@/components/consult/mentorship-session-offer";
 import { hasMentorshipSessionOffer } from "@/lib/mentor-utils";
+import { mentorshipTopicLabels } from "@/components/profile/mentorship-topics-picker";
 
 function SectionBlock({
   step,
@@ -52,9 +53,11 @@ export function MentorshipProfileView({ profile }: { profile: UserProfile }) {
   const education = profile.education ?? [];
   const papers = profile.researchPapers ?? [];
   const certs = profile.certifications ?? [];
+  const topicLabels = mentorshipTopicLabels(profile.mentorshipTopics);
 
   const hasAny =
     hasMentorshipSessionOffer(profile) ||
+    topicLabels.length > 0 ||
     profile.bio ||
     work.length > 0 ||
     profile.skills?.length > 0 ||
@@ -87,6 +90,19 @@ export function MentorshipProfileView({ profile }: { profile: UserProfile }) {
             <h3 className="font-semibold">Session offer</h3>
           </div>
           <MentorshipSessionOffer profile={profile} />
+        </DashboardCard>
+      )}
+
+      {topicLabels.length > 0 && (
+        <DashboardCard className="p-5 space-y-3">
+          <h3 className="font-semibold">Mentorship topics</h3>
+          <div className="flex flex-wrap gap-2">
+            {topicLabels.map((label) => (
+              <Badge key={label} variant="secondary" className="bg-primary/10 text-primary border-0">
+                {label}
+              </Badge>
+            ))}
+          </div>
         </DashboardCard>
       )}
 

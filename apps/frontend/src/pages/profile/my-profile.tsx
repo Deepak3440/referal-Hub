@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   useGetMe,
   getGetMeQueryKey,
@@ -22,10 +21,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ProfileProfessionalCard } from "@/components/profile/profile-professional-card";
 import { MentorshipProfileView } from "@/components/profile/mentorship-profile-view";
-import { ReferralStatsCard } from "@/components/profile/referral-stats-card";
 import { AddPointsCard } from "@/components/profile/add-points-card";
 import { DeleteAccountCard } from "@/components/profile/delete-account-card";
-import { referralStatsApi, REFERRAL_STATS_QUERY_KEYS } from "@/lib/referral-stats-api";
 import { isAlumniMember } from "@/lib/user-utils";
 import { resolveUploadUrl, withCacheBust } from "@/lib/upload-url";
 
@@ -37,14 +34,6 @@ export default function MyProfile() {
   const { data: stats } = useGetDashboardStats();
   const updateMe = useUpdateMe();
   const isAlumni = isAlumniMember(profile);
-
-  const { data: referralStats } = useQuery({
-    queryKey: REFERRAL_STATS_QUERY_KEYS.user(profile?.id ?? 0),
-    queryFn: () => referralStatsApi.getUserStats(profile!.id),
-    enabled: isAlumni && !!profile?.id,
-    staleTime: 0,
-    refetchOnMount: "always",
-  });
 
   const handleSave = (data: ProfileFormValues, photo?: ProfilePhotoSubmit) => {
     updateMe.mutate(
@@ -172,7 +161,6 @@ export default function MyProfile() {
 
       <div className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">
-          {isAlumni && referralStats && <ReferralStatsCard stats={referralStats} />}
           <ProfileProfessionalCard profile={profile} />
           {profile.isConsultant && <MentorshipProfileView profile={profile} />}
 

@@ -16,6 +16,9 @@ export type SignUpPayload = {
   fullName: string;
   email: string;
   password: string;
+  collegeName: string;
+  passoutYear: number;
+  /** Derived on client; kept for API compatibility */
   memberType: "student" | "alumni";
   isWorkingProfessional: boolean;
   isConsultant: boolean;

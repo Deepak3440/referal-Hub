@@ -211,7 +211,61 @@ Conversation ID = sorted pair of user IDs (`smaller_larger`).
 
 ## 6. Mentorship (`/consult`)
 
-Separate from referrals: book sessions with consultants (alumni with mentorship enabled). Session table, filters, cancel flow. Not mixed with referral stats on Dashboard.
+Separate from referrals: book 1:1 sessions with alumni who enable **Consultant** on their profile.
+
+### Who appears in the mentor list
+
+| Requirement | Why |
+|-------------|-----|
+| `isConsultant = true` | User opted in on signup or profile |
+| Email verified | Same visibility rules as rest of app |
+| **Mentorship topics selected** | Required in profile — e.g. Software Engineering, MBA Guidance, Career Switch |
+
+Mentors **do not** appear under a category chip unless they picked that topic in **Profile → Edit → Mentorship topics**. This matches real platforms (ADPList, Topmate): mentors declare what they help with.
+
+### Category chips (Software, MBA, Career Switch, …)
+
+- Chips map to `mentorshipTopics` on the user document (not guessed from bio/skills).
+- **All mentors** = no category filter.
+- **MBA Guidance** = only mentors who selected `mba` in their profile.
+
+### Filters (end-to-end)
+
+| Filter | Where applied | Matches |
+|--------|---------------|---------|
+| Search box | Server | Name, headline, bio, role, company, skills, education |
+| Company | Server | Current company + work history |
+| Passout year | Server | Education `batchYear` |
+| Experience | Server | `experienceYears` buckets |
+| College | Server (More filters) | Education institution |
+| Specialisation | Server (More filters) | Education stream (CSE, IT, …) |
+| Session length / Price | Server (More filters) | `mentorshipDurationMinutes`, `mentorshipPriceInr` |
+| Category chip | Server | `mentorshipTopics` array |
+
+All filters run in MongoDB **before** pagination — results stay correct at 2k+ mentors.
+
+### List at scale (2,000+ mentors)
+
+- API: `GET /consultations/experts?page=1&limit=20&…filters`
+- Response: `{ items, total, page, limit, hasMore }`
+- UI: loads 20 mentors, then **infinite scroll** (or “Load more”) fetches the next page.
+- Sort: mentors with more **completed sessions** first, then points.
+
+### Trust / rating on cards
+
+- **No fake star ratings.** Cards show **“Alumni verified”** until the mentor completes sessions.
+- After sessions: **“N sessions completed”** (count increments when a scheduled session is marked **completed**).
+- Future: post-session reviews can add real star ratings.
+
+### Consultant profile fields
+
+When `isConsultant = yes`, alumni fill **Mentorship Profile**: topics, session fee/duration, bio, experience, skills, education, etc. Students see this on mentor cards and `/consult/:id`.
+
+### Sessions flow
+
+`Pending` → mentor schedules → `Scheduled` (Meet link) → `Completed` / `Rejected` / `Cancelled`
+
+Referral success stats are **not** shown on profile pages (they live on Offer Referrals / dashboard flows).
 
 ---
 

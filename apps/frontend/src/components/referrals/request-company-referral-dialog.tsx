@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { SearchableCareerField } from "@/components/ui/searchable-career-field";
 import { companyReferralApi, type CompanyReferrerRow, COMPANY_REFERRAL_QUERY_KEYS } from "@/lib/company-referral-api";
 import { readFileAsBase64 } from "@/lib/feed-utils";
 import { useToast } from "@/hooks/use-toast";
@@ -103,7 +104,10 @@ export function RequestCompanyReferralDialog({ company, open, onOpenChange, onSu
         onOpenChange(next);
       }}
     >
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="sm:max-w-lg max-h-[90vh] overflow-y-auto"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Request a referral</DialogTitle>
           <DialogDescription>
@@ -139,20 +143,16 @@ export function RequestCompanyReferralDialog({ company, open, onOpenChange, onSu
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="role-title">
-              Role title <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="role-title"
-              placeholder="e.g., Senior Software Engineer"
-              value={roleTitle}
-              onChange={(e) => setRoleTitle(e.target.value)}
-              disabled={busy}
-              required
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-4 overflow-visible">
+          <SearchableCareerField
+            kind="role"
+            label="Role title"
+            value={roleTitle}
+            onChange={setRoleTitle}
+            placeholder="e.g. Senior Software Engineer"
+            disabled={busy}
+            required
+          />
 
           <div className="space-y-2">
             <Label htmlFor="job-url">

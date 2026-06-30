@@ -14,10 +14,10 @@ export function PublicSiteHeader() {
           <span className="text-lg font-bold tracking-tight">{BRAND.name}</span>
         </Link>
         <nav className="flex items-center gap-2 sm:gap-3">
-          <Button variant="ghost" size="sm" className="rounded-full" asChild>
+          <Button variant="ghost" className="h-10 rounded-full px-5 text-sm" asChild>
             <Link href="/sign-in">Sign in</Link>
           </Button>
-          <Button size="sm" className="rounded-full shadow-sm" asChild>
+          <Button className="h-10 rounded-full px-5 text-sm shadow-sm" asChild>
             <Link href="/sign-up">Get started</Link>
           </Button>
         </nav>

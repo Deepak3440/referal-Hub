@@ -106,6 +106,8 @@ export interface UserProfile {
   mentorshipDurationMinutes?: number | null;
   /** @nullable */
   mentorshipPriceInr?: number | null;
+  mentorshipTopics?: string[];
+  mentorshipSessionsCompleted?: number;
   memberType: UserProfileMemberType;
   workExperiences: UserProfileWorkExperiencesItem[];
   projects: UserProfileProjectsItem[];

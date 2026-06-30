@@ -60,6 +60,9 @@ import {
 } from "@/lib/offer-referral-filters";
 import { PageHeader, DashboardCard } from "@/components/layout/page-header";
 import { SegmentFilterChip, SegmentGroup, SegmentTab } from "@/components/layout/segmented-control";
+import { SearchableCareerField } from "@/components/ui/searchable-career-field";
+import { SkillsInput } from "@/components/profile/skills-input";
+import { parseSkills } from "@/lib/skill-suggestions";
 import { cn } from "@/lib/utils";
 import {
   JOB_WORK_TYPE_OPTIONS,
@@ -75,7 +78,7 @@ const jobSchema = z
     location: z.string().min(2, "Location is required"),
     workType: z.enum(["remote", "hybrid", "in_office"]).default("in_office"),
     description: z.string().min(20, "Description is required"),
-    skills: z.string().min(2, "Skills are required"),
+    skills: z.string().refine((s) => parseSkills(s).length >= 1, "Add at least one skill"),
     experienceMin: z.coerce.number().min(0).optional(),
     experienceMax: z.coerce.number().min(0).optional(),
     salaryDisclosed: z.boolean().default(false),
@@ -188,6 +191,15 @@ export default function MyListings() {
 
   const salaryDisclosed = form.watch("salaryDisclosed");
   const workType = form.watch("workType");
+
+  useEffect(() => {
+    if (isDialogOpen && me?.company) {
+      const current = form.getValues("company");
+      if (!current?.trim()) {
+        form.setValue("company", me.company);
+      }
+    }
+  }, [isDialogOpen, me?.company, form]);
   const openingCount = myJobs?.length ?? 0;
   const companyItems = companyIncoming?.items ?? [];
   const jobReferralCounts = useMemo(
@@ -245,7 +257,7 @@ export default function MyListings() {
       isRemote,
       isHybrid,
       description: data.description,
-      skills: data.skills.split(",").map((s) => s.trim()).filter(Boolean),
+      skills: parseSkills(data.skills),
       experienceMin: data.experienceMin || undefined,
       experienceMax: data.experienceMax || undefined,
       salaryDisclosed: data.salaryDisclosed,
@@ -284,7 +296,10 @@ export default function MyListings() {
           Post opening
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto overflow-x-hidden"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Post a referral opening</DialogTitle>
           <DialogDescription>
@@ -292,32 +307,40 @@ export default function MyListings() {
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 overflow-visible py-2">
             <FormSection title="Role details">
-              <div className="space-y-4">
+              <div className="space-y-4 overflow-visible">
                 <FormField
                   control={form.control}
                   name="title"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Job title</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Senior Software Engineer" {...field} />
-                      </FormControl>
+                    <FormItem className="overflow-visible">
+                      <SearchableCareerField
+                        kind="role"
+                        label="Job title"
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="e.g. Senior Software Engineer"
+                        required
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 overflow-visible sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="company"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Company</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Acme Corp" {...field} />
-                        </FormControl>
+                      <FormItem className="overflow-visible">
+                        <SearchableCareerField
+                          kind="company"
+                          label="Company"
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="e.g. Google, TCS"
+                          required
+                        />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -326,11 +349,15 @@ export default function MyListings() {
                     control={form.control}
                     name="location"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location</FormLabel>
-                        <FormControl>
-                          <Input placeholder={locationPlaceholderForWorkType(workType)} {...field} />
-                        </FormControl>
+                      <FormItem className="overflow-visible">
+                        <SearchableCareerField
+                          kind="location"
+                          label="Location"
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder={locationPlaceholderForWorkType(workType)}
+                          required
+                        />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -379,9 +406,13 @@ export default function MyListings() {
                   name="skills"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Skills (comma separated)</FormLabel>
+                      <FormLabel>Skills</FormLabel>
                       <FormControl>
-                        <Input placeholder="React, Node.js, TypeScript" {...field} />
+                        <SkillsInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Type a skill — React, Java, System Design…"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

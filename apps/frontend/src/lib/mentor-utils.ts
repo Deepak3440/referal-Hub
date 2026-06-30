@@ -63,16 +63,49 @@ export function hasMentorshipSessionOffer(
 export type MentorFilters = {
   q?: string;
   branch?: string;
+  company?: string;
   college?: string;
   graduationYear?: string;
+  /** Client-side filters (applied after API fetch) */
+  category?: string;
+  experience?: string;
+  sessionLength?: string;
+  price?: string;
 };
+
+export function countActiveMentorFilters(filters: MentorFilters): number {
+  let n = 0;
+  if (filters.college?.trim()) n++;
+  if (filters.branch?.trim()) n++;
+  if (filters.sessionLength?.trim()) n++;
+  if (filters.price?.trim()) n++;
+  return n;
+}
+
+export function countPrimaryMentorFilters(filters: MentorFilters): number {
+  let n = 0;
+  if (filters.company?.trim()) n++;
+  if (filters.graduationYear?.trim()) n++;
+  if (filters.experience?.trim()) n++;
+  return n;
+}
 
 export function buildExpertsQuery(filters: MentorFilters): string {
   const params = new URLSearchParams();
   if (filters.q?.trim()) params.set("q", filters.q.trim());
   if (filters.branch?.trim()) params.set("branch", filters.branch.trim());
+  if (filters.company?.trim()) params.set("company", filters.company.trim());
   if (filters.college?.trim()) params.set("college", filters.college.trim());
   if (filters.graduationYear?.trim()) params.set("graduationYear", filters.graduationYear.trim());
+  if (filters.category?.trim()) params.set("category", filters.category.trim());
+  if (filters.experience?.trim()) params.set("experience", filters.experience.trim());
+  if (filters.sessionLength?.trim()) params.set("sessionLength", filters.sessionLength.trim());
+  if (filters.price?.trim()) params.set("price", filters.price.trim());
   const qs = params.toString();
   return qs ? `?${qs}` : "";
+}
+
+/** @deprecated All mentor filters run on the server — list comes pre-filtered */
+export function filterMentorsOnClient(mentors: UserProfile[], _filters: MentorFilters): UserProfile[] {
+  return mentors;
 }

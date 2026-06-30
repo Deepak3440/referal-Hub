@@ -1,5 +1,5 @@
 import { useParams, Link } from "wouter";
-import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useGetUser, getGetUserQueryKey } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,9 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import { PageHeader, DashboardCard } from "@/components/layout/page-header";
 import { ProfileProfessionalCard } from "@/components/profile/profile-professional-card";
 import { MentorshipProfileView } from "@/components/profile/mentorship-profile-view";
-import { ReferralStatsCard } from "@/components/profile/referral-stats-card";
-import { referralStatsApi, REFERRAL_STATS_QUERY_KEYS } from "@/lib/referral-stats-api";
-import { isAlumniMember } from "@/lib/user-utils";
 
 export default function UserProfile() {
   const { id } = useParams();
@@ -27,14 +24,6 @@ export default function UserProfile() {
       enabled: !!userId,
       queryKey: getGetUserQueryKey(userId),
     },
-  });
-
-  const { data: referralStats } = useQuery({
-    queryKey: REFERRAL_STATS_QUERY_KEYS.user(Number(userId)),
-    queryFn: () => referralStatsApi.getUserStats(Number(userId)),
-    enabled: !!userId && Number(userId) > 0 && isAlumniMember(profile),
-    staleTime: 0,
-    refetchOnMount: "always",
   });
 
   const requestConsult = useMutation({
@@ -128,7 +117,6 @@ export default function UserProfile() {
 
       <div className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">
-          {referralStats && <ReferralStatsCard stats={referralStats} />}
           <ProfileProfessionalCard profile={profile} />
           <MentorshipProfileView profile={profile} />
 

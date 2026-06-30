@@ -19,9 +19,26 @@ export type Consultation = {
 export type MentorListFilters = {
   q?: string;
   branch?: string;
+  company?: string;
   college?: string;
   graduationYear?: string;
+  category?: string;
+  experience?: string;
+  sessionLength?: string;
+  price?: string;
+  page?: number;
+  limit?: number;
 };
+
+export type ExpertsListResponse = {
+  items: UserProfile[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+};
+
+export const MENTOR_PAGE_SIZE = 20;
 
 export const consultApi = {
   getMeetConfig: () => httpRequest<{ autoMeetEnabled: boolean }>("/consultations/meet-config"),
@@ -29,10 +46,17 @@ export const consultApi = {
     const params = new URLSearchParams();
     if (filters?.q?.trim()) params.set("q", filters.q.trim());
     if (filters?.branch?.trim()) params.set("branch", filters.branch.trim());
+    if (filters?.company?.trim()) params.set("company", filters.company.trim());
     if (filters?.college?.trim()) params.set("college", filters.college.trim());
     if (filters?.graduationYear?.trim()) params.set("graduationYear", filters.graduationYear.trim());
+    if (filters?.category?.trim()) params.set("category", filters.category.trim());
+    if (filters?.experience?.trim()) params.set("experience", filters.experience.trim());
+    if (filters?.sessionLength?.trim()) params.set("sessionLength", filters.sessionLength.trim());
+    if (filters?.price?.trim()) params.set("price", filters.price.trim());
+    if (filters?.page != null) params.set("page", String(filters.page));
+    if (filters?.limit != null) params.set("limit", String(filters.limit));
     const qs = params.toString();
-    return httpRequest<UserProfile[]>(`/consultations/experts${qs ? `?${qs}` : ""}`);
+    return httpRequest<ExpertsListResponse>(`/consultations/experts${qs ? `?${qs}` : ""}`);
   },
   listConsultations: (role?: "requester" | "consultant" | "all") =>
     httpRequest<Consultation[]>(`/consultations${role ? `?role=${role}` : ""}`),

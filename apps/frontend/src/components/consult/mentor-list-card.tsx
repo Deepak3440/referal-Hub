@@ -9,10 +9,12 @@ import {
   ChevronRight,
   Clock,
   GraduationCap,
+  Heart,
   MapPin,
 } from "lucide-react";
 import { UserAvatar } from "@/components/profile/user-avatar";
 import { ConsultRequestDialog } from "@/components/consult/consult-request-dialog";
+import { mentorshipTopicLabels } from "@/components/profile/mentorship-topics-picker";
 import { consultApi, CONSULT_QUERY_KEYS } from "@/lib/consult-api";
 import {
   formatExperienceYears,
@@ -22,6 +24,7 @@ import {
 import { avatarBgClass } from "@/lib/avatar-colors";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { mentorTrustLine, useSavedMentors } from "@/lib/saved-mentors";
 
 type Props = {
   user: UserProfile;
@@ -51,6 +54,9 @@ export function MentorListCard({ user, currentUserId }: Props) {
   const sessionMinutes = user.mentorshipDurationMinutes ?? 0;
   const sessionPrice = user.mentorshipPriceInr ?? 0;
 
+  const { isSaved, toggle } = useSavedMentors();
+  const saved = isSaved(user.id);
+  const trust = mentorTrustLine(user);
   const isSelf = currentUserId != null && currentUserId === user.id;
   const canBook = user.isConsultant === true && !isSelf;
 
@@ -78,7 +84,7 @@ export function MentorListCard({ user, currentUserId }: Props) {
       trigger={
         <Button
           type="button"
-          className="h-11 w-full rounded-xl font-semibold shadow-sm"
+          className="h-11 w-full rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] font-semibold shadow-md transition-transform hover:scale-[1.02] active:scale-[0.98]"
           disabled={requestConsult.isPending}
           onClick={stopCardClick}
         >
@@ -92,12 +98,13 @@ export function MentorListCard({ user, currentUserId }: Props) {
   const priceLabel =
     sessionPrice > 0 ? `₹${sessionPrice.toLocaleString("en-IN")}` : "Free";
   const experienceLabel = formatExperienceLabel(summary.experienceYears);
+  const topicLabels = mentorshipTopicLabels(user.mentorshipTopics);
 
   return (
     <article
       className={cn(
-        "group rounded-2xl border border-border/80 bg-card overflow-hidden",
-        "shadow-sm hover:shadow-md hover:border-primary/25 transition-all duration-200",
+        "group rounded-2xl border border-slate-200/90 bg-white overflow-hidden",
+        "shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-[#2563EB]/25 transition-all duration-300",
       )}
     >
       <div className="flex flex-col lg:flex-row lg:items-stretch">
@@ -124,11 +131,38 @@ export function MentorListCard({ user, currentUserId }: Props) {
               <button
                 type="button"
                 onClick={openDetail}
-                className="font-bold text-lg leading-tight text-foreground hover:text-primary transition-colors text-left"
+                className="font-bold text-lg leading-tight text-slate-900 hover:text-[#2563EB] transition-colors text-left"
               >
                 {user.fullName}
               </button>
-              <BadgeCheck className="h-5 w-5 text-primary shrink-0" aria-label="Verified mentor" />
+              <BadgeCheck className="h-5 w-5 text-[#2563EB] shrink-0" aria-label="Verified mentor" />
+              <button
+                type="button"
+                className="ml-auto lg:ml-0"
+                onClick={(e) => {
+                  stopCardClick(e);
+                  toggle(user.id);
+                }}
+                aria-label={saved ? "Remove from saved" : "Save mentor"}
+              >
+                <Heart
+                  className={cn(
+                    "h-5 w-5 transition-colors",
+                    saved ? "fill-rose-500 text-rose-500" : "text-slate-300 hover:text-rose-400",
+                  )}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <BadgeCheck className="h-4 w-4 text-[#2563EB] shrink-0" />
+              <span className="font-medium text-slate-800">{trust.primary}</span>
+              {trust.secondary && (
+                <>
+                  <span className="text-slate-400">·</span>
+                  <span className="text-xs text-slate-500">{trust.secondary}</span>
+                </>
+              )}
             </div>
 
             {(summary.role || summary.company) && (
@@ -171,6 +205,19 @@ export function MentorListCard({ user, currentUserId }: Props) {
                 </span>
               )}
             </div>
+
+            {topicLabels.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {topicLabels.map((label) => (
+                  <span
+                    key={label}
+                    className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+            )}
 
             {user.skills && user.skills.length > 0 && (
               <div className="space-y-1.5 pt-0.5">

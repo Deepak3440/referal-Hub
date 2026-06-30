@@ -22,6 +22,22 @@ import type {
   ResearchPaperEntry,
   WorkExperienceEntry,
 } from "@/lib/mentorship-profile-types";
+import {
+  COLLEGE_OPTIONS,
+  PASSOUT_YEAR_OPTIONS,
+  deriveMemberType,
+  educationFromCollegePassout,
+  memberTypeLabel,
+  primaryCollegeFromEducation,
+} from "@/lib/college-options";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { SearchableCareerField } from "@/components/ui/searchable-career-field";
 
 const workExperienceSchema = z.object({
   company: z.string(),
@@ -63,6 +79,8 @@ export const profileSchema = z
     mobile: z.string().optional(),
     headline: z.string().min(5, "Headline is required"),
     bio: z.string().optional(),
+    collegeName: z.string().min(1, "Select your college"),
+    passoutYear: z.coerce.number(),
     isWorkingProfessional: z.enum(["yes", "no"]),
     company: z.string().optional(),
     currentRole: z.string().optional(),
@@ -70,6 +88,7 @@ export const profileSchema = z
     isConsultant: z.enum(["yes", "no"]),
     mentorshipDurationMinutes: z.coerce.number().optional(),
     mentorshipPriceInr: z.coerce.number().min(0).optional(),
+    mentorshipTopics: z.array(z.string()).default([]),
     skills: z.string().optional(),
     linkedinUrl: z.string().url().optional().or(z.literal("")),
     workExperiences: z.array(workExperienceSchema).default([]),
@@ -79,7 +98,9 @@ export const profileSchema = z
     certifications: z.array(certificationSchema).default([]),
   })
   .superRefine((data, ctx) => {
-    if (data.isWorkingProfessional === "yes") {
+    const isAlumni = deriveMemberType(data.passoutYear) === "alumni";
+
+    if (isAlumni && data.isWorkingProfessional === "yes") {
       if (!data.company?.trim()) {
         ctx.addIssue({ code: "custom", message: "Organization is required", path: ["company"] });
       }
@@ -108,6 +129,13 @@ export const profileSchema = z
           code: "custom",
           message: "Enter session fee (use 0 for free)",
           path: ["mentorshipPriceInr"],
+        });
+      }
+      if (!data.mentorshipTopics?.length) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Select at least one mentorship topic",
+          path: ["mentorshipTopics"],
         });
       }
     }
@@ -168,11 +196,15 @@ function mapCerts(list?: UserProfile["certifications"]): CertificationEntry[] {
 }
 
 export function profileToFormValues(profile: UserProfile): ProfileFormValues {
+  const { collegeName, passoutYear } = primaryCollegeFromEducation(profile.education);
+
   return {
     fullName: profile.fullName || "",
     mobile: profile.mobile || "",
     headline: profile.headline || "",
     bio: profile.bio || "",
+    collegeName,
+    passoutYear,
     isWorkingProfessional: profile.isWorkingProfessional ? "yes" : "no",
     company: profile.company || "",
     currentRole: profile.currentRole || "",
@@ -180,11 +212,12 @@ export function profileToFormValues(profile: UserProfile): ProfileFormValues {
     isConsultant: profile.isConsultant ? "yes" : "no",
     mentorshipDurationMinutes: profile.mentorshipDurationMinutes ?? 30,
     mentorshipPriceInr: profile.mentorshipPriceInr ?? 0,
+    mentorshipTopics: profile.mentorshipTopics ?? [],
     skills: profile.skills?.join(", ") || "",
     linkedinUrl: profile.linkedinUrl || "",
     workExperiences: mapWork(profile.workExperiences),
     projects: mapProjects(profile.projects),
-    education: mapEducation(profile.education),
+    education: mapEducation(profile.education?.slice(1) ?? []),
     researchPapers: mapPapers(profile.researchPapers),
     certifications: mapCerts(profile.certifications),
   };
@@ -235,8 +268,11 @@ function cleanCerts(list: CertificationEntry[]) {
 }
 
 export function formValuesToPayload(data: ProfileFormValues) {
-  const isPro = data.isWorkingProfessional === "yes";
+  const isAlumni = deriveMemberType(data.passoutYear) === "alumni";
+  const isPro = isAlumni && data.isWorkingProfessional === "yes";
   const isConsultant = data.isConsultant === "yes";
+  const primaryEducation = educationFromCollegePassout(data.collegeName, data.passoutYear);
+  const extraEducation = cleanEducation(data.education).filter((e) => e.level !== "UG");
 
   const base = {
     fullName: data.fullName,
@@ -250,8 +286,9 @@ export function formValuesToPayload(data: ProfileFormValues) {
     experienceYears: isPro ? data.experienceYears : 0,
     skills: (data.skills ?? "").split(",").map((s) => s.trim()).filter(Boolean),
     linkedinUrl: data.linkedinUrl,
-    mentorshipDurationMinutes: null as number | null,
-    mentorshipPriceInr: null as number | null,
+    mentorshipDurationMinutes: undefined as number | undefined,
+    mentorshipPriceInr: undefined as number | undefined,
+    education: [...primaryEducation, ...extraEducation],
   };
 
   if (!isConsultant) return base;
@@ -260,9 +297,9 @@ export function formValuesToPayload(data: ProfileFormValues) {
     ...base,
     mentorshipDurationMinutes: data.mentorshipDurationMinutes ?? 30,
     mentorshipPriceInr: data.mentorshipPriceInr ?? 0,
+    mentorshipTopics: data.mentorshipTopics ?? [],
     workExperiences: cleanWork(data.workExperiences),
     projects: cleanProjects(data.projects),
-    education: cleanEducation(data.education),
     researchPapers: cleanPapers(data.researchPapers),
     certifications: cleanCerts(data.certifications),
   };
@@ -323,6 +360,9 @@ export function ProfileForm({
   const isPro = form.watch("isWorkingProfessional") === "yes";
   const isConsultant = form.watch("isConsultant") === "yes";
   const fullName = form.watch("fullName");
+  const passoutYear = form.watch("passoutYear");
+  const isAlumni = deriveMemberType(Number(passoutYear)) === "alumni";
+  const memberType = deriveMemberType(Number(passoutYear));
 
   useEffect(() => {
     form.reset(profileToFormValues(profile));
@@ -342,7 +382,7 @@ export function ProfileForm({
               : undefined,
           );
         })}
-        className="space-y-6"
+        className="space-y-6 overflow-visible"
       >
         <ProfilePhotoPicker
           fullName={fullName}
@@ -357,6 +397,75 @@ export function ProfileForm({
         {photoError && (
           <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{photoError}</p>
         )}
+
+        <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
+          <div>
+            <p className="text-sm font-medium">College details</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Student or Alumni is set automatically from your passout year.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="collegeName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>College name</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="h-11 w-full">
+                        <SelectValue placeholder="Select college" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {COLLEGE_OPTIONS.map((college) => (
+                        <SelectItem key={college} value={college}>
+                          {college}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="passoutYear"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Passout year</FormLabel>
+                  <Select
+                    value={field.value ? String(field.value) : undefined}
+                    onValueChange={(v) => field.onChange(Number(v))}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-11 w-full">
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PASSOUT_YEAR_OPTIONS.map((year) => (
+                        <SelectItem key={year} value={String(year)}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
+            <p className="text-xs text-muted-foreground">Account type</p>
+            <p className="text-sm font-semibold text-primary">{memberTypeLabel(memberType)}</p>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
@@ -387,37 +496,49 @@ export function ProfileForm({
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="isWorkingProfessional"
-          render={({ field }) => (
-            <FormItem>
-              <YesNoField label="Are you a working professional?" value={field.value} onChange={field.onChange} />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {isPro && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField control={form.control} name="company" render={({ field }) => (
+        {isAlumni && (
+          <FormField
+            control={form.control}
+            name="isWorkingProfessional"
+            render={({ field }) => (
               <FormItem>
-                <FormLabel>Organization Name</FormLabel>
-                <FormControl><Input placeholder="Tech Corp" {...field} /></FormControl>
+                <YesNoField label="Are you a working professional?" value={field.value} onChange={field.onChange} />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {isAlumni && isPro && (
+          <div className="grid grid-cols-1 gap-4 overflow-visible md:grid-cols-2">
+            <FormField control={form.control} name="company" render={({ field }) => (
+              <FormItem className="overflow-visible">
+                <SearchableCareerField
+                  kind="company"
+                  label="Company name"
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  placeholder="e.g. Google, TCS, Infosys"
+                />
                 <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="currentRole" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Role</FormLabel>
-                <FormControl><Input placeholder="Software Engineer" {...field} /></FormControl>
+              <FormItem className="overflow-visible">
+                <SearchableCareerField
+                  kind="role"
+                  label="Role"
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  placeholder="e.g. Software Engineer"
+                />
                 <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="experienceYears" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Total Experience (years)</FormLabel>
-                <FormControl><Input type="number" min="0" {...field} /></FormControl>
+              <FormItem className="md:col-span-2 md:max-w-xs">
+                <FormLabel>Total experience (years)</FormLabel>
+                <FormControl><Input type="number" min="0" className="h-11" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
