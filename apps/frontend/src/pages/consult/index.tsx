@@ -1,15 +1,15 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useInfiniteQuery, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { useGetMe } from "@workspace/api-client-react";
-import { consultApi, CONSULT_QUERY_KEYS, MENTOR_PAGE_SIZE, type Consultation } from "@/lib/consult-api";
-import { ConsultBookDialog } from "@/components/consult/consult-book-dialog";
+import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
+import { consultApi, CONSULT_QUERY_KEYS, MENTOR_PAGE_SIZE } from "@/lib/consult-api";
 import { ConsultSessionsTable } from "@/components/consult/consult-sessions-table";
 import { MentorListCard } from "@/components/consult/mentor-list-card";
 import { MentorFiltersBar, MentorTabBar } from "@/components/consult/mentor-filters";
 import { MentorshipHero } from "@/components/consult/mentorship-hero";
 import { MentorshipCategoryChips } from "@/components/consult/mentorship-category-chips";
 import { MentorshipInfoPanel } from "@/components/consult/mentorship-info-panel";
+import { MentorshipSessionsHelp } from "@/components/consult/mentorship-sessions-help";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -33,7 +33,6 @@ const EMPTY_FILTERS: MentorFilters = {
 export default function ConsultPage() {
   const [location] = useLocation();
   const [tab, setTab] = useState<Tab>("experts");
-  const [bookTarget, setBookTarget] = useState<Consultation | null>(null);
   const [filters, setFilters] = useState<MentorFilters>(EMPTY_FILTERS);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const { data: me } = useGetMe();
@@ -65,11 +64,6 @@ export default function ConsultPage() {
       filters.price,
     ],
   );
-
-  const { data: meetConfig } = useQuery({
-    queryKey: CONSULT_QUERY_KEYS.meetConfig,
-    queryFn: () => consultApi.getMeetConfig(),
-  });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -119,40 +113,80 @@ export default function ConsultPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (args: {
-      id: number;
-      status: "scheduled" | "rejected" | "completed" | "cancelled";
-      scheduledAt?: string;
-      durationMinutes?: number;
-      meetingLink?: string;
-    }) => consultApi.updateConsultation(args.id, args),
+    mutationFn: (args: { id: number; status: "cancelled" | "completed" | "rejected" }) =>
+      consultApi.updateConsultation(args.id, { status: args.status }),
     onSuccess: (data) => {
-      if (data.status === "scheduled") {
+      if (data.status === "completed" && data.pointsCreditedToMentor && data.pointsCreditedToMentor > 0) {
+        const isMentor = data.consultantId === me?.id;
         toast({
-          title: "Session booked",
-          description: data.meetingLink
-            ? "Google Meet link is ready."
-            : "Session scheduled.",
+          title: "Session completed",
+          description: isMentor
+            ? `${data.pointsCreditedToMentor} pts added to your wallet.`
+            : `${data.pointsCreditedToMentor} pts sent to your mentor.`,
         });
-      } else if (data.status === "rejected") {
-        toast({ title: "Request declined" });
+        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+      } else if (data.status === "cancelled") {
+        toast({
+          title: "Session cancelled",
+          description: data.pointsDeducted
+            ? "Charged points refunded. The slot is open again."
+            : "No points were charged. The slot is open again.",
+        });
+        if (data.pointsDeducted) {
+          queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+        }
       } else {
         toast({ title: `Session ${data.status}` });
       }
       queryClient.invalidateQueries({ queryKey: CONSULT_QUERY_KEYS.list("all") });
-      setBookTarget(null);
+      queryClient.invalidateQueries({ queryKey: CONSULT_QUERY_KEYS.experts() });
+    },
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
+  });
+
+  const payMutation = useMutation({
+    mutationFn: (id: number) => consultApi.confirmPayment(id),
+    onSuccess: (data) => {
+      toast({
+        title: "Booking confirmed",
+        description:
+          data.payment?.chargeNote
+          ?? "Points will be charged when the session goes live.",
+      });
+      queryClient.invalidateQueries({ queryKey: CONSULT_QUERY_KEYS.list("all") });
+      queryClient.invalidateQueries({ queryKey: CONSULT_QUERY_KEYS.experts() });
+      queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+    },
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
+  });
+
+  const disputeMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) =>
+      consultApi.raiseDispute(id, reason),
+    onSuccess: () => {
+      toast({
+        title: "Issue reported",
+        description: "An admin will review your session. Mentor is not paid until this is resolved.",
+      });
+      queryClient.invalidateQueries({ queryKey: CONSULT_QUERY_KEYS.list("all") });
     },
     onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
   });
 
   const pendingIncoming =
-    sessions?.filter((s) => s.consultantId === me?.id && s.status === "pending").length ?? 0;
+    sessions?.filter(
+      (s) =>
+        s.consultantId === me?.id
+        && ["pending", "pending_payment", "scheduled"].includes(s.status),
+    ).length ?? 0;
 
   const groupedSessions = useMemo(() => {
     const list = sessions ?? [];
     return {
-      pending: list.filter((s) => s.status === "pending"),
-      scheduled: list.filter((s) => s.status === "scheduled"),
+      awaiting: list.filter((s) => ["pending", "pending_payment"].includes(s.status)),
+      upcoming: list.filter((s) =>
+        ["scheduled", "waiting_for_participants", "started"].includes(s.status),
+      ),
       done: list.filter((s) => ["completed", "rejected", "cancelled"].includes(s.status)),
     };
   }, [sessions]);
@@ -221,7 +255,9 @@ export default function ConsultPage() {
                     <UserSearch className="w-10 h-10 mx-auto text-slate-300 mb-3" />
                     <p className="font-semibold text-slate-800">No mentors match your search</p>
                     <p className="text-sm text-slate-500 mt-1.5 max-w-sm mx-auto">
-                      Try clearing filters or check back when more alumni join as consultants.
+                      {filters.q || filters.company || filters.category
+                        ? "Try clearing filters or search with different keywords."
+                        : "Mentors appear here only when they set weekly hours and have open slots. Ask alumni to complete their mentorship profile."}
                     </p>
                     <Button
                       variant="outline"
@@ -250,26 +286,29 @@ export default function ConsultPage() {
 
         {tab === "sessions" && (
           <div className="space-y-4 p-4 sm:p-5">
+            <MentorshipSessionsHelp />
             {sessionsLoading ? (
               <Skeleton className="h-48 rounded-xl" />
             ) : sessions && sessions.length > 0 ? (
               <>
                 <ConsultSessionsTable
-                  title="Pending requests"
-                  sessions={groupedSessions.pending}
+                  title="Awaiting booking confirm"
+                  sessions={groupedSessions.awaiting}
                   meId={me?.id ?? 0}
-                  onRespond={setBookTarget}
+                  onPay={(s) => payMutation.mutate(s.id)}
+                  onDispute={(id, reason) => disputeMutation.mutate({ id, reason })}
                   onCancel={(id) => updateMutation.mutate({ id, status: "cancelled" })}
                   onComplete={(id) => updateMutation.mutate({ id, status: "completed" })}
-                  actionsDisabled={updateMutation.isPending}
+                  actionsDisabled={updateMutation.isPending || payMutation.isPending || disputeMutation.isPending}
                 />
                 <ConsultSessionsTable
-                  title="Upcoming sessions"
-                  sessions={groupedSessions.scheduled}
+                  title="Upcoming & live sessions"
+                  sessions={groupedSessions.upcoming}
                   meId={me?.id ?? 0}
+                  onDispute={(id, reason) => disputeMutation.mutate({ id, reason })}
                   onCancel={(id) => updateMutation.mutate({ id, status: "cancelled" })}
                   onComplete={(id) => updateMutation.mutate({ id, status: "completed" })}
-                  actionsDisabled={updateMutation.isPending}
+                  actionsDisabled={updateMutation.isPending || disputeMutation.isPending}
                 />
                 <ConsultSessionsTable
                   title="Past sessions"
@@ -299,27 +338,6 @@ export default function ConsultPage() {
           </div>
         )}
       </div>
-
-      {bookTarget && (
-        <ConsultBookDialog
-          open={Boolean(bookTarget)}
-          onOpenChange={(o) => !o && setBookTarget(null)}
-          requesterName={bookTarget.requester?.fullName ?? "User"}
-          autoMeetEnabled={meetConfig?.autoMeetEnabled ?? false}
-          onBook={async (scheduledAt, durationMinutes, meetingLink) => {
-            await updateMutation.mutateAsync({
-              id: bookTarget.id,
-              status: "scheduled",
-              scheduledAt,
-              durationMinutes,
-              meetingLink,
-            });
-          }}
-          onReject={async () => {
-            await updateMutation.mutateAsync({ id: bookTarget.id, status: "rejected" });
-          }}
-        />
-      )}
     </div>
   );
 }

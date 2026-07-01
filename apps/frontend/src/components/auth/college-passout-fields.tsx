@@ -33,22 +33,21 @@ export function CollegePassoutFields({
     typeof passoutYear === "number" ? deriveMemberType(passoutYear) : null;
 
   return (
-    <div className={cn("space-y-4 rounded-xl border bg-card p-4", className)}>
+    <div className={cn("space-y-4 rounded-xl border bg-card p-4 sm:p-5", className)}>
       <div>
-        <p className="text-sm font-medium">College details</p>
+        <p className="text-sm font-semibold">Your college</p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Your status (Student or Alumni) is set automatically from your passout year.
+          Step 1 — pick your college, then passout year. We set Student vs Alumni automatically.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label>College name</Label>
-          <Select value={collegeName || undefined} onValueChange={onCollegeChange}>
-            <SelectTrigger className="h-11 w-full bg-background shadow-sm">
-              <SelectValue placeholder="Select your college" />
-            </SelectTrigger>
-            <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
+      <div className="space-y-2">
+        <Label>College name</Label>
+        <Select value={collegeName || undefined} onValueChange={onCollegeChange}>
+          <SelectTrigger className="h-11 w-full bg-background shadow-sm">
+            <SelectValue placeholder="Select your college" />
+          </SelectTrigger>
+          <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
             {COLLEGE_OPTIONS.map((college) => (
               <SelectItem key={college} value={college}>
                 {college}
@@ -56,18 +55,18 @@ export function CollegePassoutFields({
             ))}
           </SelectContent>
         </Select>
-        </div>
+      </div>
 
-        <div className="space-y-2">
-          <Label>Passout year</Label>
-          <Select
-            value={passoutYear === "" ? undefined : String(passoutYear)}
-            onValueChange={(v) => onPassoutYearChange(Number(v))}
-          >
-            <SelectTrigger className="h-11 w-full bg-background shadow-sm">
-              <SelectValue placeholder="Select passout year" />
-            </SelectTrigger>
-            <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
+      <div className="space-y-2 sm:max-w-xs">
+        <Label>Passout year</Label>
+        <Select
+          value={passoutYear === "" ? undefined : String(passoutYear)}
+          onValueChange={(v) => onPassoutYearChange(Number(v))}
+        >
+          <SelectTrigger className="h-11 w-full bg-background shadow-sm">
+            <SelectValue placeholder="Select passout year" />
+          </SelectTrigger>
+          <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
             {PASSOUT_YEAR_OPTIONS.map((year) => (
               <SelectItem key={year} value={String(year)}>
                 {year}
@@ -75,7 +74,6 @@ export function CollegePassoutFields({
             ))}
           </SelectContent>
         </Select>
-        </div>
       </div>
 
       {memberType && (

@@ -12,8 +12,26 @@ import {
   Clock,
 } from "lucide-react";
 import { MentorshipSessionOffer } from "@/components/consult/mentorship-session-offer";
+import { MentorAvailabilitySummary } from "@/components/consult/mentor-availability-summary";
 import { hasMentorshipSessionOffer } from "@/lib/mentor-utils";
 import { mentorshipTopicLabels } from "@/components/profile/mentorship-topics-picker";
+import { useQuery } from "@tanstack/react-query";
+import { consultApi, CONSULT_QUERY_KEYS } from "@/lib/consult-api";
+
+function MentorshipProfileAvailability({ profile }: { profile: UserProfile }) {
+  const { data } = useQuery({
+    queryKey: CONSULT_QUERY_KEYS.slots(profile.id),
+    queryFn: () => consultApi.getMentorSlots(profile.id),
+    enabled: profile.isConsultant === true,
+  });
+
+  return (
+    <MentorAvailabilitySummary
+      profile={profile}
+      openSlotCount={data?.slots?.length}
+    />
+  );
+}
 
 function SectionBlock({
   step,
@@ -92,6 +110,10 @@ export function MentorshipProfileView({ profile }: { profile: UserProfile }) {
           <MentorshipSessionOffer profile={profile} />
         </DashboardCard>
       )}
+
+      <DashboardCard className="p-5">
+        <MentorshipProfileAvailability profile={profile} />
+      </DashboardCard>
 
       {topicLabels.length > 0 && (
         <DashboardCard className="p-5 space-y-3">

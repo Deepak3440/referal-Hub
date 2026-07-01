@@ -1,6 +1,8 @@
 import type { FilterQuery } from "mongoose";
 import { UserModel, publiclyVisibleUserFilter, type UserDoc } from "@workspace/db";
 import { isMentorshipTopicId } from "../lib/mentorship-topics";
+import { hasConfiguredAvailability } from "../lib/mentorship-availability";
+import { getConsultantSlotsMeta } from "./mentorship-slots";
 
 export type ExpertListQuery = {
   excludeUserId: number;
@@ -33,6 +35,8 @@ function buildExpertFilter(query: ExpertListQuery): FilterQuery<UserDoc> {
     { isConsultant: true },
     { id: { $ne: query.excludeUserId } },
     publiclyVisibleUserFilter,
+    { mentorshipWeeklyAvailability: { $exists: true, $not: { $size: 0 } } },
+    { mentorshipTopics: { $exists: true, $not: { $size: 0 } } },
   ];
 
   if (query.company) {
@@ -113,17 +117,37 @@ export async function listExperts(query: ExpertListQuery): Promise<ExpertListRes
   const limit = Math.min(MAX_LIMIT, Math.max(1, query.limit ?? DEFAULT_LIMIT));
   const filter = buildExpertFilter(query);
 
-  const [total, users] = await Promise.all([
-    UserModel.countDocuments(filter),
-    UserModel.find(filter)
-      .sort({ mentorshipSessionsCompleted: -1, totalPoints: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean(),
-  ]);
+  const fromIso = new Date().toISOString();
+  const toIso = new Date(Date.now() + 14 * 24 * 60 * 60_000).toISOString();
+
+  const candidates = await UserModel.find(filter)
+    .sort({ mentorshipSessionsCompleted: -1, totalPoints: -1 })
+    .lean();
+
+  const withSlots: { user: UserDoc; openSlotCount: number }[] = [];
+  await Promise.all(
+    candidates.map(async (user) => {
+      if (!hasConfiguredAvailability(user.mentorshipWeeklyAvailability as { dayOfWeek: number }[])) {
+        return;
+      }
+      const meta = await getConsultantSlotsMeta(user.id, fromIso, toIso);
+      if (meta.slots.length > 0) {
+        withSlots.push({ user, openSlotCount: meta.slots.length });
+      }
+    }),
+  );
+
+  withSlots.sort(
+    (a, b) =>
+      (b.user.mentorshipSessionsCompleted ?? 0) - (a.user.mentorshipSessionsCompleted ?? 0)
+      || (b.user.totalPoints ?? 0) - (a.user.totalPoints ?? 0),
+  );
+
+  const total = withSlots.length;
+  const slice = withSlots.slice((page - 1) * limit, page * limit);
 
   return {
-    users,
+    users: slice.map((s) => s.user),
     total,
     page,
     limit,

@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "seed:demo": "tsx --env-file=../../.env src/scripts/seed-demo-users.ts",
     "seed:demo-referrals": "tsx --env-file=../../.env src/scripts/seed-demo-referrals.ts",
-    "seed:demo-offer-deepak": "tsx --env-file=../../.env src/scripts/seed-demo-offer-deepak.ts"
+    "seed:demo-offer-deepak": "tsx --env-file=../../.env src/scripts/seed-demo-offer-deepak.ts",
+    "seed:admin": "tsx --env-file=../../.env src/scripts/seed-admin-user.ts"
   },
   "dependencies": {
     "@workspace/api-zod": "workspace:*",

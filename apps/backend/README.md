@@ -517,7 +517,7 @@ Express app.ts
 | Change who can post    | `routes/jobs.ts`, `routes/posts.ts`                   |
 | Change auth            | `routes/auth.ts`, `middlewares/auth.ts`, `lib/jwt.ts` |
 | Change feed            | `routes/posts.ts`, `lib/uploads.ts`                   |
-| Change mentorship      | `routes/consultations.ts`, `services/googleMeet.ts`   |
+| Change mentorship      | `routes/consultations.ts`, `services/mentorship-payment.ts` |
 | Seed test data         | `src/scripts/seed-demo-users.ts`                      |
 
 

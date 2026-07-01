@@ -1,6 +1,6 @@
 import type { UserProfile } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   BadgeCheck,
@@ -13,16 +13,15 @@ import {
   MapPin,
 } from "lucide-react";
 import { UserAvatar } from "@/components/profile/user-avatar";
-import { ConsultRequestDialog } from "@/components/consult/consult-request-dialog";
+import { ConsultBookSlotDialog } from "@/components/consult/consult-book-slot-dialog";
 import { mentorshipTopicLabels } from "@/components/profile/mentorship-topics-picker";
-import { consultApi, CONSULT_QUERY_KEYS } from "@/lib/consult-api";
+import { CONSULT_QUERY_KEYS } from "@/lib/consult-api";
 import {
   formatExperienceYears,
   getMentorCardSummary,
   hasMentorshipSessionOffer,
 } from "@/lib/mentor-utils";
 import { avatarBgClass } from "@/lib/avatar-colors";
-import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { mentorTrustLine, useSavedMentors } from "@/lib/saved-mentors";
 
@@ -47,7 +46,6 @@ function formatExperienceLabel(years: number | null): string | null {
 
 export function MentorListCard({ user, currentUserId }: Props) {
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const summary = getMentorCardSummary(user);
   const hasSession = hasMentorshipSessionOffer(user);
@@ -60,32 +58,22 @@ export function MentorListCard({ user, currentUserId }: Props) {
   const isSelf = currentUserId != null && currentUserId === user.id;
   const canBook = user.isConsultant === true && !isSelf;
 
-  const requestConsult = useMutation({
-    mutationFn: (message: string) => consultApi.requestConsultation(user.id, message),
-    onSuccess: () => {
-      toast({
-        title: "Mentorship request sent",
-        description: "Check My Sessions for updates and your Meet link.",
-      });
-      queryClient.invalidateQueries({ queryKey: CONSULT_QUERY_KEYS.list("all") });
-    },
-    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
-  });
-
   const openDetail = () => setLocation(`/consult/${user.id}`);
 
   const bookButton = canBook && (
-    <ConsultRequestDialog
-      consultantName={user.fullName}
+    <ConsultBookSlotDialog
       consultantId={user.id}
-      onSubmit={async (message) => {
-        await requestConsult.mutateAsync(message);
+      consultantName={user.fullName}
+      priceInr={sessionPrice}
+      durationMinutes={sessionMinutes || 30}
+      onBooked={() => {
+        queryClient.invalidateQueries({ queryKey: CONSULT_QUERY_KEYS.list("all") });
+        queryClient.invalidateQueries({ queryKey: CONSULT_QUERY_KEYS.experts() });
       }}
       trigger={
         <Button
           type="button"
           className="h-11 w-full rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] font-semibold shadow-md transition-transform hover:scale-[1.02] active:scale-[0.98]"
-          disabled={requestConsult.isPending}
           onClick={stopCardClick}
         >
           <Calendar className="h-4 w-4 mr-2 shrink-0" />
@@ -96,7 +84,7 @@ export function MentorListCard({ user, currentUserId }: Props) {
   );
 
   const priceLabel =
-    sessionPrice > 0 ? `₹${sessionPrice.toLocaleString("en-IN")}` : "Free";
+    sessionPrice > 0 ? `${sessionPrice} pts` : "Free";
   const experienceLabel = formatExperienceLabel(summary.experienceYears);
   const topicLabels = mentorshipTopicLabels(user.mentorshipTopics);
 
@@ -121,7 +109,7 @@ export function MentorListCard({ user, currentUserId }: Props) {
             {canBook && (
               <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 whitespace-nowrap">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Available
+                Open slots
               </span>
             )}
           </div>

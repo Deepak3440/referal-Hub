@@ -108,6 +108,14 @@ export default function SignUpPage() {
           <p className="rounded-lg bg-destructive/10 px-3 py-2.5 text-sm text-destructive">{error}</p>
         )}
 
+        <CollegePassoutFields
+          collegeName={collegeName}
+          passoutYear={passoutYear}
+          onCollegeChange={setCollegeName}
+          onPassoutYearChange={setPassoutYear}
+          className="overflow-visible border-primary/20 bg-primary/[0.03] p-4 sm:p-5"
+        />
+
         <AuthFormSection title="Personal details">
           <div className="space-y-2">
             <Label htmlFor="fullName">Full name</Label>
@@ -158,14 +166,6 @@ export default function SignUpPage() {
             </div>
           </div>
         </AuthFormSection>
-
-        <CollegePassoutFields
-          collegeName={collegeName}
-          passoutYear={passoutYear}
-          onCollegeChange={setCollegeName}
-          onPassoutYearChange={setPassoutYear}
-          className="overflow-visible border-border/70 bg-card/50 p-4 sm:p-5"
-        />
 
         {isAlumni && (
           <AuthFormSection

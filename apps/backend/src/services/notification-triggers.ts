@@ -92,6 +92,44 @@ export async function notifyMentorshipUpdate(params: {
   });
 }
 
+export async function notifyMentorshipSessionConfirmed(params: {
+  consultantId: number;
+  requesterId: number;
+  requesterName: string;
+  consultantName: string;
+  consultationId: number;
+  scheduledAt: string;
+  meetingLink: string;
+}) {
+  const when = params.scheduledAt
+    ? new Date(params.scheduledAt).toLocaleString("en-IN", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : "soon";
+
+  await Promise.all([
+    createNotification({
+      userId: params.consultantId,
+      type: "mentorship_scheduled",
+      title: "New session booked",
+      message: `${params.requesterName} booked a session on ${when}.`,
+      referenceId: params.consultationId,
+      referenceType: "consultation",
+      linkPath: "/consult?tab=sessions",
+    }),
+    createNotification({
+      userId: params.requesterId,
+      type: "mentorship_scheduled",
+      title: "Session confirmed",
+      message: `Your session with ${params.consultantName} is confirmed for ${when}. Join from My Sessions.`,
+      referenceId: params.consultationId,
+      referenceType: "consultation",
+      linkPath: "/consult?tab=sessions",
+    }),
+  ]);
+}
+
 export async function notifyPostLike(params: {
   authorId: number;
   likerName: string;

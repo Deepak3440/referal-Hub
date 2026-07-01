@@ -52,6 +52,12 @@ const certificationZ = z.object({
   year: z.coerce.number().optional(),
 });
 
+const weeklyAvailabilityZ = z.object({
+  dayOfWeek: z.number().int().min(0).max(6),
+  startTime: z.string().regex(/^\d{1,2}:\d{2}$/),
+  endTime: z.string().regex(/^\d{1,2}:\d{2}$/),
+});
+
 const ExtendedUpdateMeBody = UpdateMeBody.extend({
   collegeName: z.string().min(1).optional(),
   passoutYear: z.coerce.number().optional(),
@@ -59,6 +65,8 @@ const ExtendedUpdateMeBody = UpdateMeBody.extend({
   isConsultant: z.boolean().optional(),
   mentorshipDurationMinutes: z.coerce.number().int().min(15).max(120).optional().nullable(),
   mentorshipPriceInr: z.coerce.number().int().min(0).optional().nullable(),
+  mentorshipTimezone: z.string().min(1).optional(),
+  mentorshipWeeklyAvailability: z.array(weeklyAvailabilityZ).max(14).optional(),
   workExperiences: z.array(workExperienceZ).optional(),
   projects: z.array(projectZ).optional(),
   education: z.array(educationZ).optional(),

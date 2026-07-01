@@ -89,6 +89,15 @@ export const profileSchema = z
     mentorshipDurationMinutes: z.coerce.number().optional(),
     mentorshipPriceInr: z.coerce.number().min(0).optional(),
     mentorshipTopics: z.array(z.string()).default([]),
+    mentorshipWeeklyAvailability: z
+      .array(
+        z.object({
+          dayOfWeek: z.number().int().min(0).max(6),
+          startTime: z.string(),
+          endTime: z.string(),
+        }),
+      )
+      .default([]),
     skills: z.string().optional(),
     linkedinUrl: z.string().url().optional().or(z.literal("")),
     workExperiences: z.array(workExperienceSchema).default([]),
@@ -136,6 +145,13 @@ export const profileSchema = z
           code: "custom",
           message: "Select at least one mentorship topic",
           path: ["mentorshipTopics"],
+        });
+      }
+      if (!data.mentorshipWeeklyAvailability?.length) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Add at least one weekly availability block so students can book you",
+          path: ["mentorshipWeeklyAvailability"],
         });
       }
     }
@@ -213,6 +229,9 @@ export function profileToFormValues(profile: UserProfile): ProfileFormValues {
     mentorshipDurationMinutes: profile.mentorshipDurationMinutes ?? 30,
     mentorshipPriceInr: profile.mentorshipPriceInr ?? 0,
     mentorshipTopics: profile.mentorshipTopics ?? [],
+    mentorshipWeeklyAvailability:
+      (profile as UserProfile & { mentorshipWeeklyAvailability?: { dayOfWeek: number; startTime: string; endTime: string }[] })
+        .mentorshipWeeklyAvailability ?? [],
     skills: profile.skills?.join(", ") || "",
     linkedinUrl: profile.linkedinUrl || "",
     workExperiences: mapWork(profile.workExperiences),
@@ -298,6 +317,7 @@ export function formValuesToPayload(data: ProfileFormValues) {
     mentorshipDurationMinutes: data.mentorshipDurationMinutes ?? 30,
     mentorshipPriceInr: data.mentorshipPriceInr ?? 0,
     mentorshipTopics: data.mentorshipTopics ?? [],
+    mentorshipWeeklyAvailability: data.mentorshipWeeklyAvailability ?? [],
     workExperiences: cleanWork(data.workExperiences),
     projects: cleanProjects(data.projects),
     researchPapers: cleanPapers(data.researchPapers),

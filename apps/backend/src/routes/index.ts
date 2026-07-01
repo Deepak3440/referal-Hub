@@ -13,6 +13,7 @@ import referralStatsRouter from "./referral-stats";
 import configRouter from "./config";
 import companyReferralsRouter from "./company-referrals";
 import careerRouter from "./career";
+import adminMentorshipRouter from "./admin-mentorship";
 
 const router: IRouter = Router();
 
@@ -28,6 +29,7 @@ router.use(referralsRouter);
 router.use(messagesRouter);
 router.use(statsRouter);
 router.use(consultationsRouter);
+router.use(adminMentorshipRouter);
 router.use(postsRouter);
 router.use(notificationsRouter);
 

@@ -1,5 +1,5 @@
 import { useRoute, Link } from "wouter";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useGetUser, getGetUserQueryKey } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,36 +8,20 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trophy, Video, GraduationCap, Building2, BookOpen } from "lucide-react";
 import { DashboardCard } from "@/components/layout/page-header";
 import { MentorshipProfileView } from "@/components/profile/mentorship-profile-view";
-import { ConsultRequestDialog } from "@/components/consult/consult-request-dialog";
+import { ConsultBookSlotDialog } from "@/components/consult/consult-book-slot-dialog";
 import { MentorshipSessionOffer } from "@/components/consult/mentorship-session-offer";
-import { consultApi, CONSULT_QUERY_KEYS } from "@/lib/consult-api";
-import { getPrimaryEducation } from "@/lib/mentor-utils";
-import { useToast } from "@/hooks/use-toast";
+import { CONSULT_QUERY_KEYS } from "@/lib/consult-api";
+import { getPrimaryEducation, hasMentorAvailabilityConfigured } from "@/lib/mentor-utils";
 
 export default function MentorDetail() {
   const [matched, params] = useRoute("/consult/:userId");
   const id = matched ? String(params?.userId ?? "0") : "0";
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: profile, isLoading, isError } = useGetUser(id, {
     query: {
       enabled: matched && id !== "0",
       queryKey: getGetUserQueryKey(id),
-    },
-  });
-
-  const requestConsult = useMutation({
-    mutationFn: (message: string) => consultApi.requestConsultation(Number(id), message),
-    onSuccess: () => {
-      toast({
-        title: "Mentorship request sent",
-        description: "Check My Sessions for updates and your Meet link.",
-      });
-      queryClient.invalidateQueries({ queryKey: CONSULT_QUERY_KEYS.list("all") });
-    },
-    onError: (err: Error) => {
-      toast({ title: err.message, variant: "destructive" });
     },
   });
 
@@ -74,7 +58,7 @@ export default function MentorDetail() {
   }
 
   const edu = getPrimaryEducation(profile);
-  const canBook = profile.isConsultant === true;
+  const canBook = profile.isConsultant === true && hasMentorAvailabilityConfigured(profile);
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -112,11 +96,13 @@ export default function MentorDetail() {
               )}
               <MentorshipSessionOffer profile={profile} variant="onPrimary" />
             </div>
-            <ConsultRequestDialog
-              consultantName={profile.fullName}
+            <ConsultBookSlotDialog
               consultantId={profile.id}
-              onSubmit={async (message) => {
-                await requestConsult.mutateAsync(message);
+              consultantName={profile.fullName}
+              priceInr={profile.mentorshipPriceInr ?? 0}
+              durationMinutes={profile.mentorshipDurationMinutes ?? 30}
+              onBooked={() => {
+                queryClient.invalidateQueries({ queryKey: CONSULT_QUERY_KEYS.list("all") });
               }}
               trigger={
                 <Button
@@ -126,7 +112,7 @@ export default function MentorDetail() {
                   disabled={!canBook}
                 >
                   <Video className="w-4 h-4 mr-2" />
-                  {canBook ? "Book session" : "Not available"}
+                  {canBook ? "Book session" : "Not taking bookings"}
                 </Button>
               }
             />

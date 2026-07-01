@@ -23,6 +23,8 @@ import MyListings from "@/pages/my-listings";
 import Referrals from "@/pages/referrals";
 import ConsultPage from "@/pages/consult";
 import MentorDetail from "@/pages/consult/mentor-detail";
+import ConsultSessionPage from "@/pages/consult/session";
+import AdminMentorshipPage from "@/pages/admin/mentorship-disputes";
 import Messages from "@/pages/messages";
 import MyProfile from "@/pages/profile/my-profile";
 import UserProfile from "@/pages/profile/user-profile";
@@ -80,6 +82,12 @@ function Router() {
       </Route>
       <Route path="/referrals">
         <AuthPage><Referrals /></AuthPage>
+      </Route>
+      <Route path="/admin/mentorship">
+        <AuthPage><AdminMentorshipPage /></AuthPage>
+      </Route>
+      <Route path="/consult/session/:id">
+        <AuthPage><ConsultSessionPage /></AuthPage>
       </Route>
       <Route path="/consult/:userId">
         <AuthPage><MentorDetail /></AuthPage>

@@ -108,6 +108,8 @@ export interface UserProfile {
   mentorshipPriceInr?: number | null;
   mentorshipTopics?: string[];
   mentorshipSessionsCompleted?: number;
+  mentorshipTimezone?: string;
+  mentorshipWeeklyAvailability?: { dayOfWeek: number; startTime: string; endTime: string }[];
   memberType: UserProfileMemberType;
   workExperiences: UserProfileWorkExperiencesItem[];
   projects: UserProfileProjectsItem[];

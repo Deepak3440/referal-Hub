@@ -1,16 +1,19 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { format } from "date-fns";
 import {
   Calendar,
   CheckCircle2,
   Clock,
-  ExternalLink,
+  Flag,
   MessageSquare,
+  Trophy,
   User,
   Video,
   XCircle,
 } from "lucide-react";
 import type { Consultation } from "@/lib/consult-api";
+import { canMarkSessionComplete, canRaiseSessionDispute, canEnterVideoRoom, getSessionJoinWindow, sessionPointsLabel, sessionStatusLabel } from "@/lib/mentor-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,29 +35,53 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 const STATUS_STYLE: Record<string, string> = {
   pending: "bg-warning/10 text-warning border-warning/30",
+  pending_payment: "bg-amber-500/10 text-amber-700 border-amber-500/30",
   scheduled: "bg-success/10 text-success border-success/30",
+  waiting_for_participants: "bg-blue-500/10 text-blue-700 border-blue-500/30",
+  started: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
   rejected: "bg-red-500/10 text-red-700 border-red-500/30",
   completed: "bg-primary/10 text-primary border-primary/30",
   cancelled: "bg-muted text-muted-foreground border-border",
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Pending",
-  scheduled: "Scheduled",
-  rejected: "Declined",
-  completed: "Completed",
-  cancelled: "Cancelled",
-};
+function SessionStatusBadge({ session }: { session: Consultation }) {
+  const label = sessionStatusLabel(session);
+  const isLive = session.status === "started";
+
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        "text-xs",
+        STATUS_STYLE[session.status],
+        isLive && "border-emerald-600 text-emerald-700 bg-emerald-50",
+      )}
+    >
+      {isLive && (
+        <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+      )}
+      {label}
+    </Badge>
+  );
+}
+
+const JOINABLE = ["scheduled", "waiting_for_participants", "started"];
 
 function CancelSessionButton({
   otherName,
+  pointsWillRefund,
+  pointsNotChargedYet,
   onConfirm,
   disabled,
 }: {
   otherName: string;
+  pointsWillRefund?: boolean;
+  pointsNotChargedYet?: boolean;
   onConfirm: () => void;
   disabled?: boolean;
 }) {
@@ -77,7 +104,15 @@ function CancelSessionButton({
         <AlertDialogHeader>
           <AlertDialogTitle>Cancel this session?</AlertDialogTitle>
           <AlertDialogDescription>
-            Your session with <strong>{otherName}</strong> will be cancelled. This cannot be undone.
+            Your session with <strong>{otherName}</strong> will be cancelled.
+            {pointsNotChargedYet && (
+              <span className="block mt-2 text-emerald-700">
+                No points have been charged yet — you can cancel freely.
+              </span>
+            )}
+            {pointsWillRefund && (
+              <span className="block mt-2">Charged points will be refunded to the student.</span>
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -89,7 +124,120 @@ function CancelSessionButton({
               setOpen(false);
             }}
           >
-            Yes, cancel session
+            Yes, cancel
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function CompleteSessionButton({
+  otherName,
+  pointsNote,
+  onConfirm,
+  disabled,
+}: {
+  otherName: string;
+  pointsNote?: string | null;
+  onConfirm: () => void;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={disabled}
+        className="h-8 rounded-full border-emerald-500/40 text-emerald-700 hover:bg-emerald-50"
+        onClick={() => setOpen(true)}
+      >
+        <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+        Mark complete
+      </Button>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Mark session as complete?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Confirm your call with <strong>{otherName}</strong> has finished.
+            {pointsNote && (
+              <span className="block mt-2">
+                {pointsNote} will be released to your mentor&apos;s wallet.
+              </span>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Not yet</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              onConfirm();
+              setOpen(false);
+            }}
+          >
+            Yes, complete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function DisputeSessionButton({
+  onConfirm,
+  disabled,
+}: {
+  onConfirm: (reason: string) => void;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={disabled}
+        className="h-8 rounded-full border-amber-500/50 text-amber-800 hover:bg-amber-50"
+        onClick={() => setOpen(true)}
+      >
+        <Flag className="h-3.5 w-3.5 mr-1.5" />
+        Report issue
+      </Button>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Report a problem with this session</AlertDialogTitle>
+          <AlertDialogDescription>
+            Use this if the mentor did not deliver the full session or something went wrong after
+            points were charged. Our team will review manually — refunds are not automatic.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-2 py-1">
+          <Label htmlFor="dispute-reason">What happened?</Label>
+          <Textarea
+            id="dispute-reason"
+            rows={4}
+            placeholder="e.g. Mentor left after 10 minutes, audio did not work, no-show after I joined…"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Back</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={reason.trim().length < 20}
+            onClick={() => {
+              onConfirm(reason.trim());
+              setReason("");
+              setOpen(false);
+            }}
+          >
+            Submit for review
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -100,52 +248,85 @@ function CancelSessionButton({
 function SessionActions({
   session,
   isConsultant,
-  onRespond,
+  onPay,
   onCancel,
   onComplete,
+  onDispute,
   actionsDisabled,
 }: {
   session: Consultation;
   isConsultant: boolean;
-  onRespond?: () => void;
+  onPay?: () => void;
   onCancel: () => void;
   onComplete: () => void;
+  onDispute?: (reason: string) => void;
   actionsDisabled?: boolean;
 }) {
   const otherName = (isConsultant ? session.requester : session.consultant)?.fullName ?? "User";
-  const canCancel = ["pending", "scheduled"].includes(session.status);
+  const canCancel = ["pending", "pending_payment", "scheduled", "waiting_for_participants"].includes(
+    session.status,
+  );
+  const showComplete = canMarkSessionComplete(session);
+  const showDispute = !isConsultant && onDispute && canRaiseSessionDispute(session);
+  const pts = session.amountPoints || session.amountInr;
+  const canJoin = canEnterVideoRoom(session);
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
-      {session.status === "pending" && isConsultant && onRespond && (
-        <Button size="sm" className="h-8 rounded-full" disabled={actionsDisabled} onClick={onRespond}>
-          Respond & Book
+      {session.status === "pending_payment" && !isConsultant && onPay && (
+        <Button size="sm" className="h-8 rounded-full" disabled={actionsDisabled} onClick={onPay}>
+          <Trophy className="h-3.5 w-3.5 mr-1.5" />
+          Confirm · {pts} pts when live
         </Button>
       )}
-      {session.status === "scheduled" && session.meetingLink && (
+      {session.disputeStatus === "open" && (
+        <Badge variant="outline" className="rounded-full border-amber-500 text-amber-800">
+          Under review
+        </Badge>
+      )}
+      {JOINABLE.includes(session.status) && session.meetingLink && canJoin && (
         <Button asChild size="sm" className="h-8 rounded-full">
-          <a href={session.meetingLink} target="_blank" rel="noopener noreferrer">
+          <Link href={`/consult/session/${session.id}`}>
             <Video className="h-3.5 w-3.5 mr-1.5" />
-            Join
-            <ExternalLink className="h-3 w-3 ml-1 opacity-70" />
-          </a>
+            {session.status === "started" ? "Rejoin call" : "Join session"}
+          </Link>
         </Button>
       )}
-      {session.status === "scheduled" && isConsultant && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 rounded-full"
+      {showComplete && (
+        <CompleteSessionButton
+          otherName={otherName}
+          pointsNote={
+            isConsultant && pts > 0 && session.pointsDeducted
+              ? `${pts} pts`
+              : !isConsultant && pts > 0
+                ? `${pts} pts`
+                : null
+          }
+          onConfirm={onComplete}
           disabled={actionsDisabled}
-          onClick={onComplete}
-        >
-          <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-          Complete
-        </Button>
+        />
+      )}
+      {showDispute && (
+        <DisputeSessionButton
+          onConfirm={onDispute}
+          disabled={actionsDisabled}
+        />
+      )}
+      {session.status === "started" && isConsultant && (
+        <p className="w-full text-[11px] text-muted-foreground text-right basis-full">
+          Live — use Mark complete when done. Cancel is not available during the call.
+        </p>
+      )}
+      {session.status === "started" && !isConsultant && !showDispute && session.pointsDeducted && (
+        <p className="w-full text-[11px] text-muted-foreground text-right basis-full">
+          Something wrong? Use Report issue — admin will review.
+        </p>
       )}
       {canCancel && (
         <CancelSessionButton
           otherName={otherName}
+          pointsNotChargedYet={session.pointsReserved && !session.pointsDeducted}
+          pointsWillRefund={session.pointsDeducted && !session.mentorPointsCredited}
           onConfirm={onCancel}
           disabled={actionsDisabled}
         />
@@ -155,7 +336,9 @@ function SessionActions({
 }
 
 function SessionWhen({ session }: { session: Consultation }) {
-  if (session.status === "scheduled" && session.scheduledAt) {
+  const joinWindow = getSessionJoinWindow(session);
+
+  if (session.scheduledAt) {
     return (
       <div className="space-y-0.5 text-sm">
         <p className="flex items-center gap-1.5 font-medium">
@@ -165,7 +348,13 @@ function SessionWhen({ session }: { session: Consultation }) {
         <p className="flex items-center gap-1.5 text-muted-foreground text-xs">
           <Clock className="h-3.5 w-3.5" />
           {format(new Date(session.scheduledAt), "h:mm a")} · {session.durationMinutes} min
+          {sessionPointsLabel(session) && ` · ${sessionPointsLabel(session)}`}
         </p>
+        {joinWindow?.isTooEarly && session.status === "scheduled" && (
+          <p className="text-[11px] text-muted-foreground">
+            Join opens {format(joinWindow.opensAt, "h:mm a")}
+          </p>
+        )}
       </div>
     );
   }
@@ -173,7 +362,7 @@ function SessionWhen({ session }: { session: Consultation }) {
   if (session.createdAt) {
     return (
       <p className="text-sm text-muted-foreground">
-        Requested {format(new Date(session.createdAt), "MMM d, yyyy")}
+        Created {format(new Date(session.createdAt), "MMM d, yyyy")}
       </p>
     );
   }
@@ -185,9 +374,10 @@ type ConsultSessionsTableProps = {
   title: string;
   sessions: Consultation[];
   meId: number;
-  onRespond?: (session: Consultation) => void;
+  onPay?: (session: Consultation) => void;
   onCancel: (id: number) => void;
   onComplete: (id: number) => void;
+  onDispute?: (id: number, reason: string) => void;
   actionsDisabled?: boolean;
 };
 
@@ -195,9 +385,10 @@ export function ConsultSessionsTable({
   title,
   sessions,
   meId,
-  onRespond,
+  onPay,
   onCancel,
   onComplete,
+  onDispute,
   actionsDisabled,
 }: ConsultSessionsTableProps) {
   if (!sessions.length) return null;
@@ -238,22 +429,17 @@ export function ConsultSessionsTable({
                       <div className="min-w-0">
                         <p className="font-medium truncate">{otherName}</p>
                         <p className="text-[11px] text-muted-foreground">
-                          {isConsultant ? "Incoming request" : "Your request"}
+                          {isConsultant ? "Mentee" : "Mentor"}
                         </p>
                       </div>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className={cn("text-[10px] md:hidden", STATUS_STYLE[session.status])}
-                    >
-                      {STATUS_LABEL[session.status] ?? session.status}
-                    </Badge>
+                    <div className="md:hidden">
+                      <SessionStatusBadge session={session} />
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  <Badge variant="outline" className={cn("text-xs", STATUS_STYLE[session.status])}>
-                    {STATUS_LABEL[session.status] ?? session.status}
-                  </Badge>
+                  <SessionStatusBadge session={session} />
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
                   <SessionWhen session={session} />
@@ -272,13 +458,18 @@ export function ConsultSessionsTable({
                   <SessionActions
                     session={session}
                     isConsultant={isConsultant}
-                    onRespond={
-                      session.status === "pending" && isConsultant && onRespond
-                        ? () => onRespond(session)
+                    onPay={
+                      session.status === "pending_payment" && !isConsultant && onPay
+                        ? () => onPay(session)
                         : undefined
                     }
                     onCancel={() => onCancel(session.id)}
                     onComplete={() => onComplete(session.id)}
+                    onDispute={
+                      onDispute && !isConsultant
+                        ? (reason) => onDispute(session.id, reason)
+                        : undefined
+                    }
                     actionsDisabled={actionsDisabled}
                   />
                 </TableCell>

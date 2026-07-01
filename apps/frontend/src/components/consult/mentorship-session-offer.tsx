@@ -1,5 +1,5 @@
 import type { UserProfile } from "@workspace/api-client-react";
-import { Clock, IndianRupee } from "lucide-react";
+import { Clock, Trophy } from "lucide-react";
 import { formatMentorshipSession, hasMentorshipSessionOffer } from "@/lib/mentor-utils";
 import { cn } from "@/lib/utils";
 
@@ -66,8 +66,8 @@ export function MentorshipSessionOffer({ profile, className, compact, variant = 
           "Free"
         ) : (
           <>
-            <IndianRupee className="h-3.5 w-3.5" />
-            {price.toLocaleString("en-IN")} / session
+            <Trophy className="h-3.5 w-3.5" />
+            {price} pts / session
           </>
         )}
       </span>

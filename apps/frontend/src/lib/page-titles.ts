@@ -7,6 +7,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/my-listings": "Offer Referrals",
   "/referrals": "Track Requests",
   "/consult": "Mentorship",
+  "/admin/mentorship": "Dispute tickets",
   "/profile": "Profile",
   "/messages": "Messages",
 };

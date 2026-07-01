@@ -27,7 +27,7 @@ Everyone can use **Feed** and **Profile**. Only alumni see **Offer Referrals**.
 | **Profile** | `/profile` | Everyone | Edit profile, photo, company (alumni) |
 
 Badge on **Offer Referrals** = pending job + company requests waiting for you.  
-Badge on **Mentorship** = pending consult sessions.
+Badge on **Mentorship** = sessions needing action (awaiting payment for you, or new bookings on your calendar).
 
 ---
 
@@ -219,9 +219,10 @@ Separate from referrals: book 1:1 sessions with alumni who enable **Consultant**
 |-------------|-----|
 | `isConsultant = true` | User opted in on signup or profile |
 | Email verified | Same visibility rules as rest of app |
-| **Mentorship topics selected** | Required in profile — e.g. Software Engineering, MBA Guidance, Career Switch |
+| **Mentorship topics selected** | Required — e.g. Software Engineering, MBA Guidance |
+| **Weekly availability saved** | At least one day + time range in profile — no fake default hours |
 
-Mentors **do not** appear under a category chip unless they picked that topic in **Profile → Edit → Mentorship topics**. This matches real platforms (ADPList, Topmate): mentors declare what they help with.
+Mentors without saved weekly hours **do not appear** in discovery until they add them in **Profile → Edit → Mentorship → Weekly availability**.
 
 ### Category chips (Software, MBA, Career Switch, …)
 
@@ -261,9 +262,38 @@ All filters run in MongoDB **before** pagination — results stay correct at 2k+
 
 When `isConsultant = yes`, alumni fill **Mentorship Profile**: topics, session fee/duration, bio, experience, skills, education, etc. Students see this on mentor cards and `/consult/:id`.
 
-### Sessions flow
+### Sessions flow (Topmate-style)
 
-`Pending` → mentor schedules → `Scheduled` (Meet link) → `Completed` / `Rejected` / `Cancelled`
+1. **Mentor sets availability** — Profile → Mentorship → **Weekly availability** (required). Example: Mon–Fri 6–8 PM. Slots are split by session duration (30/45/60 min).
+2. **Student picks a slot** — Only **open** (unbooked) slots appear in the book dialog, next 14 days.
+3. **Payment** — Free → room immediately. Paid → `pending_payment` until **Pay & confirm** (demo; Razorpay later).
+4. **Video** — Jitsi Meet at `https://meet.jit.si/referaa-session-{id}` (embedded at `/consult/session/:id`). See `docs/MENTORSHIP-SETUP.md`.
+5. **Join** — **My Sessions** → Join session at scheduled time.
+6. **Webhooks** — Track join/leave and duration; **do not** auto-complete the session.
+7. **Complete** — After the call, either party taps **Mark complete** → increments `mentorshipSessionsCompleted`.
+
+| Status | Meaning |
+|--------|---------|
+| `pending_payment` | Slot reserved; student must pay |
+| `scheduled` | Paid/confirmed; meeting link ready |
+| `waiting_for_participants` | Room open; waiting for joins |
+| `started` | At least one participant in room |
+| `completed` | Session finished |
+| `cancelled` / `rejected` | Not happening |
+
+Meeting states (`meetingStatus`): `scheduled` → `waiting_for_participants` → `started` → `completed`.
+
+**APIs**
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/consultations/experts/:id/slots` | Available slots for mentor |
+| POST | `/consultations/book` | Book slot |
+| POST | `/consultations/:id/pay` | Confirm simulated payment + create room |
+| GET | `/consultations/:id` | Session + meeting status |
+| POST | `/consultations/:id/join` | Record participant join; mentor starts session |
+
+Legacy `POST /consultations` (message-only request) is disabled — use slot booking.
 
 Referral success stats are **not** shown on profile pages (they live on Offer Referrals / dashboard flows).
 

@@ -49,6 +49,15 @@ const certificationSchema = new Schema(
   { _id: false },
 );
 
+const weeklyAvailabilitySchema = new Schema(
+  {
+    dayOfWeek: { type: Number, required: true, min: 0, max: 6 },
+    startTime: { type: String, required: true },
+    endTime: { type: String, required: true },
+  },
+  { _id: false },
+);
+
 const userSchema = new Schema(
   {
     id: { type: Number, required: true, unique: true },
@@ -73,6 +82,8 @@ const userSchema = new Schema(
     mentorshipPriceInr: { type: Number, default: null },
     mentorshipTopics: { type: [String], default: [] },
     mentorshipSessionsCompleted: { type: Number, default: 0 },
+    mentorshipTimezone: { type: String, default: "Asia/Kolkata" },
+    mentorshipWeeklyAvailability: { type: [weeklyAvailabilitySchema], default: [] },
     memberType: { type: String, enum: ["student", "alumni"], default: "student" },
     workExperiences: { type: [workExperienceSchema], default: [] },
     projects: { type: [projectSchema], default: [] },
@@ -80,6 +91,8 @@ const userSchema = new Schema(
     researchPapers: { type: [researchPaperSchema], default: [] },
     certifications: { type: [certificationSchema], default: [] },
     isProfileComplete: { type: Boolean, required: true, default: false },
+    /** Platform admin — can resolve mentorship disputes (no .env list required). */
+    isPlatformAdmin: { type: Boolean, default: false },
     emailVerified: { type: Boolean, default: false },
     emailVerificationTokenHash: { type: String, default: null, select: false },
     emailVerificationExpiresAt: { type: Date, default: null, select: false },
@@ -121,6 +134,12 @@ export function toUserProfile(user: UserDoc | null) {
     mentorshipPriceInr: user.mentorshipPriceInr ?? null,
     mentorshipTopics: user.mentorshipTopics ?? [],
     mentorshipSessionsCompleted: user.mentorshipSessionsCompleted ?? 0,
+    mentorshipTimezone: user.mentorshipTimezone ?? "Asia/Kolkata",
+    mentorshipWeeklyAvailability: (user.mentorshipWeeklyAvailability ?? []).map((w) => ({
+      dayOfWeek: w.dayOfWeek,
+      startTime: w.startTime,
+      endTime: w.endTime,
+    })),
     memberType: user.memberType ?? "student",
     workExperiences: user.workExperiences ?? [],
     projects: user.projects ?? [],

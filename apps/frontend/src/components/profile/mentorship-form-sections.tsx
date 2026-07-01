@@ -1,5 +1,5 @@
 import type { Control } from "react-hook-form";
-import { useFieldArray } from "react-hook-form";
+import { useFieldArray, useWatch } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -15,6 +15,7 @@ import {
 import type { ProfileFormValues } from "@/components/profile/profile-form";
 import { SkillsInput } from "@/components/profile/skills-input";
 import { MentorshipTopicsPicker } from "@/components/profile/mentorship-topics-picker";
+import { MentorAvailabilityEditor } from "@/components/profile/mentor-availability-editor";
 import { MENTORSHIP_DURATION_OPTIONS } from "@/lib/mentor-utils";
 import {
   EMPTY_CERT,
@@ -61,6 +62,7 @@ export function MentorshipFormSections({ control }: { control: Control<ProfileFo
   const education = useFieldArray({ control, name: "education" });
   const papers = useFieldArray({ control, name: "researchPapers" });
   const certs = useFieldArray({ control, name: "certifications" });
+  const sessionDuration = useWatch({ control, name: "mentorshipDurationMinutes" });
 
   return (
     <div className="space-y-8 rounded-xl border-2 border-primary/20 bg-primary/5 p-5 md:p-6">
@@ -111,18 +113,18 @@ export function MentorshipFormSections({ control }: { control: Control<ProfileFo
             name="mentorshipPriceInr"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Session fee (₹)</FormLabel>
+                <FormLabel>Session fee (points)</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
                     min="0"
                     step="1"
-                    placeholder="500"
+                    placeholder="50"
                     {...field}
                     value={field.value ?? ""}
                   />
                 </FormControl>
-                <p className="text-[11px] text-muted-foreground">Use 0 for a free session.</p>
+                <p className="text-[11px] text-muted-foreground">Use 0 for free. Mentor receives points when session is marked complete.</p>
                 <FormMessage />
               </FormItem>
             )}
@@ -150,6 +152,23 @@ export function MentorshipFormSections({ control }: { control: Control<ProfileFo
           )}
         />
       </div>
+
+      <FormField
+        control={control}
+        name="mentorshipWeeklyAvailability"
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <MentorAvailabilityEditor
+                value={field.value ?? []}
+                onChange={field.onChange}
+                sessionDurationMinutes={sessionDuration ?? 30}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       {/* 1. About */}
       <div className="space-y-3">

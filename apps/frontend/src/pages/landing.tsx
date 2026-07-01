@@ -82,7 +82,7 @@ function HeroVisual() {
       icon: Video,
       iconBg: "bg-primary/10",
       title: "Mentorship session booked",
-      sub: "Tomorrow · 30 min · Google Meet",
+      sub: "Tomorrow · 30 min · Video session",
     },
   ] as const;
 

@@ -74,7 +74,7 @@ export function ConsultSessionCard({
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1">
               <div className="flex items-center gap-2 text-sm font-medium text-green-800">
                 <Video className="w-4 h-4" />
-                Google Meet ready
+                Video session ready
               </div>
               <Button asChild size="sm" variant="default" className="h-8">
                 <a href={session.meetingLink} target="_blank" rel="noopener noreferrer">

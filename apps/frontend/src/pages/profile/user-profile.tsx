@@ -1,14 +1,13 @@
 import { useParams, Link } from "wouter";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useGetUser, getGetUserQueryKey } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ConsultRequestDialog } from "@/components/consult/consult-request-dialog";
-import { consultApi, CONSULT_QUERY_KEYS } from "@/lib/consult-api";
-import { useToast } from "@/hooks/use-toast";
+import { ConsultBookSlotDialog } from "@/components/consult/consult-book-slot-dialog";
+import { CONSULT_QUERY_KEYS } from "@/lib/consult-api";
 import { PageHeader, DashboardCard } from "@/components/layout/page-header";
 import { ProfileProfessionalCard } from "@/components/profile/profile-professional-card";
 import { MentorshipProfileView } from "@/components/profile/mentorship-profile-view";
@@ -16,28 +15,12 @@ import { MentorshipProfileView } from "@/components/profile/mentorship-profile-v
 export default function UserProfile() {
   const { id } = useParams();
   const userId = id || "0";
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: profile, isLoading } = useGetUser(userId, {
     query: {
       enabled: !!userId,
       queryKey: getGetUserQueryKey(userId),
-    },
-  });
-
-  const requestConsult = useMutation({
-    mutationFn: (message: string) =>
-      consultApi.requestConsultation(Number(userId), message),
-    onSuccess: () => {
-      toast({
-        title: "Consulting request sent",
-        description: "Check Consult → My Sessions for updates and Meet link.",
-      });
-      queryClient.invalidateQueries({ queryKey: CONSULT_QUERY_KEYS.list("all") });
-    },
-    onError: (err: Error) => {
-      toast({ title: err.message, variant: "destructive" });
     },
   });
 
@@ -65,19 +48,23 @@ export default function UserProfile() {
           </Avatar>
 
           <div className="flex justify-end pt-4 gap-2 flex-wrap">
-            <ConsultRequestDialog
-              consultantName={profile.fullName}
-              consultantId={profile.id}
-              onSubmit={async (message) => {
-                await requestConsult.mutateAsync(message);
-              }}
-              trigger={
-                <Button size="sm">
-                  <Video className="w-4 h-4 mr-1" />
-                  Ask 1:1 Consulting
-                </Button>
-              }
-            />
+            {profile.isConsultant && (
+              <ConsultBookSlotDialog
+                consultantId={profile.id}
+                consultantName={profile.fullName}
+                priceInr={profile.mentorshipPriceInr ?? 0}
+                durationMinutes={profile.mentorshipDurationMinutes ?? 30}
+                onBooked={() => {
+                  queryClient.invalidateQueries({ queryKey: CONSULT_QUERY_KEYS.list("all") });
+                }}
+                trigger={
+                  <Button size="sm">
+                    <Video className="w-4 h-4 mr-1" />
+                    Book mentorship
+                  </Button>
+                }
+              />
+            )}
             <Button asChild variant="outline" size="sm">
               <Link href="/consult">My Sessions</Link>
             </Button>

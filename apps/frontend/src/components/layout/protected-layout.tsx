@@ -36,12 +36,19 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const pendingReferralCount = receivedReferrals?.filter((r) => r.status === "pending").length ?? 0;
 
   const { data: consultSessions } = useQuery({
-    queryKey: CONSULT_QUERY_KEYS.list("consultant"),
-    queryFn: () => consultApi.listConsultations("consultant"),
+    queryKey: CONSULT_QUERY_KEYS.list("all"),
+    queryFn: () => consultApi.listConsultations("all"),
     enabled: isLoaded && isSignedIn,
   });
+
   const pendingConsultCount =
-    consultSessions?.filter((s) => s.status === "pending").length ?? 0;
+    consultSessions?.filter((s) => {
+      if (!userProfile) return false;
+      if (s.status === "pending_payment" && s.requesterId === userProfile.id) return true;
+      if (s.status === "pending" && s.consultantId === userProfile.id) return true;
+      if (s.status === "scheduled" && s.consultantId === userProfile.id) return true;
+      return false;
+    }).length ?? 0;
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
